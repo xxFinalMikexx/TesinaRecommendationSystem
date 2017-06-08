@@ -1,0 +1,42 @@
+{
+  "project_info": {
+    "project_number": "354063105333",
+    "firebase_url": "https://tesinafinal-e025b.firebaseio.com",
+    "project_id": "tesinafinal-e025b",
+    "storage_bucket": "tesinafinal-e025b.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:354063105333:android:12cf0d0eed233c3e",
+        "android_client_info": {
+          "package_name": "com.example.xxfin.tesinarecommendationsystem"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "354063105333-5ei0g37pk69s5q4tvnp8quqpsp1e6cjf.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDPgxM_YE-0BuZfx9OERpiExYQFgozfpVA"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 1,
+          "other_platform_oauth_client": []
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

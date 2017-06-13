@@ -19,11 +19,26 @@ public class QuestionActivity extends AppCompatActivity {
 
     private String edadesList[] = {"Entre 15 y 25", "Entre 26 y 40", "Entre 41 y 60", "Mayor de 60"};
     private String generoList[] = {"Masculino", "Femenino"};
+    
+    private String email = "";
+    private String userId = "";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_question);
+        
+        Bundle extras = getIntent().getExtras();
+        if(extras != null) {
+            email = (String) extras.get("email");
+            userId = (String) extras.get("userId");
+            
+            //TODO retrieve information from DB
+            //Ignores questions and go directly to activity
+        } else {
+            //TODO there are no information to retrieve
+            //Enter to Questions in this activity
+        }
 
         Spinner generoSpin = (Spinner) findViewById(R.id.genero);
         Spinner edadesSpin = (Spinner) findViewById(R.id.rangoEdad);

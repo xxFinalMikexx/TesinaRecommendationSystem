@@ -9,15 +9,17 @@ public class Users {
     private String genero;
     private int rangoEdad;
     private int tipo;
+    private String email;
 
     public Users() {
 
     }
-    public Users(String nombre, String genero, int rangoEdad, int tipo) {
+    public Users(String nombre, String genero, int rangoEdad, int tipo, String email) {
         this.nombre = nombre;
         this.genero = genero;
         this.rangoEdad = rangoEdad;
         this.tipo = tipo;
+        this.email = email;
     }
 
     public int getTipo() {
@@ -53,5 +55,14 @@ public class Users {
 
     public void setNombre(String nombre) {
         this.nombre = nombre;
+    }
+    
+    public String getEmail() {
+        
+        return email;
+    }
+    
+    public void setEmail(String email) {
+        this.email = email;
     }
 }

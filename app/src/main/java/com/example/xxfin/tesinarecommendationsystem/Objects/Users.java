@@ -5,6 +5,7 @@ package com.example.xxfin.tesinarecommendationsystem.Objects;
  */
 
 public class Users {
+    private String userId;
     private String nombre;
     private String genero;
     private int rangoEdad;
@@ -14,7 +15,8 @@ public class Users {
     public Users() {
 
     }
-    public Users(String nombre, String genero, int rangoEdad, int tipo, String email) {
+    public Users(String userId, String nombre, String genero, int rangoEdad, int tipo, String email) {
+        this.userId = userId;
         this.nombre = nombre;
         this.genero = genero;
         this.rangoEdad = rangoEdad;
@@ -64,5 +66,14 @@ public class Users {
     
     public void setEmail(String email) {
         this.email = email;
+    }
+    
+    public String getUserId() {
+        
+        return userId;
+    }
+    
+    public void setUserId(String userId) {
+        this.userId = userId;
     }
 }

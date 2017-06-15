@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context="com.example.xxfin.tesinarecommendationsystem.ComentarioActivity">
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <GridLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_marginRight="10dp"
+            android:layout_marginLeft="10dp"
+            android:columnCount="4"
+            android:rowCount="6">
+
+            <TextView
+                android:layout_columnWeight="3"
+                android:layout_height="75dp"
+                android:layout_row="0"
+                android:layout_column="0"
+                android:layout_marginRight="5dp"
+                android:layout_marginLeft="10dp"
+                android:text="¿Te gustó tu visita?"/>
+
+            <Spinner
+                android:id="@+id/spinGustar"
+                android:layout_columnWeight="1"
+                android:layout_height="75dp"
+                android:layout_row="0"
+                android:layout_column="3"
+                android:layout_marginRight="10dp"
+                android:layout_marginLeft="5dp">
+            </Spinner>
+
+            <TextView
+                android:layout_height="75dp"
+                android:layout_column="0"
+                android:layout_columnWeight="3"
+                android:layout_marginLeft="10dp"
+                android:layout_marginRight="5dp"
+                android:layout_row="1"
+                android:text="¿Es tu primera vez aquí?" />
+
+            <Spinner
+                android:id="@+id/spinPrimera"
+                android:layout_columnWeight="1"
+                android:layout_height="75dp"
+                android:layout_row="1"
+                android:layout_column="3"
+                android:layout_marginRight="10dp"
+                android:layout_marginLeft="5dp">
+            </Spinner>
+
+            <TextView
+                android:layout_height="20dp"
+                android:layout_column="0"
+                android:layout_columnWeight="4"
+                android:layout_marginLeft="10dp"
+                android:layout_marginRight="5dp"
+                android:layout_row="2"
+                android:text="Comentarios" />
+
+            <EditText
+                android:id="@+id/editComentario"
+                android:layout_columnWeight="4"
+                android:layout_height="75dp"
+                android:layout_row="3"
+                android:layout_column="0"
+                android:layout_columnSpan="4"
+                android:layout_marginRight="10dp"
+                android:layout_marginLeft="5dp">
+            </EditText>
+
+        </GridLayout>
+
+    </ScrollView>
+    <!--
+    Foto
+    Obtener coordenadas
+    -->
+</RelativeLayout>

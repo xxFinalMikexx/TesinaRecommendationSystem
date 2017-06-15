@@ -79,7 +79,7 @@ public class QuestionActivity extends AppCompatActivity {
 
         mDatabase = FirebaseDatabase.getInstance().getReference();
 
-        Users user = new Users(nombreSeleccionado, generoSeleccionado, edadTipo, -1);
+        Users user = new Users(userId, nombreSeleccionado, generoSeleccionado, edadTipo, -1, email);
 
         DatabaseReference products = mFirebaseDatabaseReference.child("Users");
         String key = mFirebaseDatabaseReference.child("Users").push().getKey();

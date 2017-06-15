@@ -3,6 +3,7 @@ package com.example.xxfin.tesinarecommendationsystem;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.annotation.TargetApi;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.support.annotation.NonNull;
 import android.support.design.widget.Snackbar;
@@ -19,6 +20,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.provider.ContactsContract;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -28,6 +30,7 @@ import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -35,6 +38,8 @@ import java.util.List;
 import static android.Manifest.permission.READ_CONTACTS;
 
 /*Firebase imports*/
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.*;
 
 /**
@@ -48,6 +53,9 @@ public class LoginActivity extends AppCompatActivity {
     /*Buttons and Views*/
     private EditText mEmailField;
     private EditText mPasswordField;
+
+    /*Tag for log*/
+    private String TAG = "LoginActivity";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -100,7 +108,7 @@ public class LoginActivity extends AppCompatActivity {
                                 @Override
                                 public void onComplete(@NonNull Task<AuthResult> task) {
                                     if (!task.isSuccessful()) {
-                                        Toast.makeText(LoginActivity.this, R.string.auth_failed,
+                                        Toast.makeText(LoginActivity.this, "Error de creación de Sesión",
                                                 Toast.LENGTH_SHORT).show();
                                     }
                                 }
@@ -109,8 +117,8 @@ public class LoginActivity extends AppCompatActivity {
     }
     
     private void signIn(View v) {
-        String email = eMailField.getText().toString();
-        String password = ePasswordField.getText().toString();
+        String email = mEmailField.getText().toString();
+        String password = mPasswordField.getText().toString();
         
         if (!validateForm()) {
             return;
@@ -122,7 +130,7 @@ public class LoginActivity extends AppCompatActivity {
                             public void onComplete(@NonNull Task<AuthResult> task) {
                                 Log.d(TAG, "signInWithEmail:onComplete:" + task.isSuccessful());
                                 if (!task.isSuccessful()) {
-                                    Toast.makeText(LoginActivity.this, R.string.auth_failed,
+                                    Toast.makeText(LoginActivity.this, "Error de inicio de Sesión",
                                             Toast.LENGTH_SHORT).show();
                                 }
                             }

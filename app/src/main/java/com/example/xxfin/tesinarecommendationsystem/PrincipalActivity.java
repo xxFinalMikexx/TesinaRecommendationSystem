@@ -13,16 +13,6 @@ public class PrincipalActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_principal);
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
-
-    }
-
-    public void enviarAporte(View v) {
-
-    }
-
-    public void buscarRecomendacion(View v) {
 
     }
 

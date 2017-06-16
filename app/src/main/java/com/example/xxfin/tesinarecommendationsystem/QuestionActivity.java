@@ -28,6 +28,8 @@ public class QuestionActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_question);
         
+        mFirebaseDatabaseReference = FirebaseDatabase.getInstance().getReference();
+        
         Bundle extras = getIntent().getExtras();
         if(extras != null) {
             email = (String) extras.get("email");
@@ -35,9 +37,41 @@ public class QuestionActivity extends AppCompatActivity {
             
             //TODO retrieve information from DB
             //Ignores questions and go directly to activity
+            /*Firebase reference to DB to get current user information*/
+            mFirebaseDatabaseReference.child("users").addValueEventListener(new ValueEventListener() {
+                @Override
+                public void onDataChange(DataSnapshot dataSnapshot) {
+                    try{
+                        for (DataSnapshot userSnap : dataSnapshot.getChildren()) {
+                            Users userObj = userSnap.getValue(Users.class);
+                            if(userObj.getUserId().equals(userId)) {
+                                /*User has already answered the questions. Go directly to */
+                                Intent mainIntent = new Intent(QuestionActivity.this, PrincipalActivity.class);
+                                startActivity(mainIntent);
+                                finish();
+                                break;
+                            }
+                        }
+
+                    } catch (Exception ex) {
+                        Toast.makeText(context.getApplicationContext(), ex.getMessage(), Toast.LENGTH_SHORT).show();
+
+                    }
+                }
+
+                @Override
+                public void onCancelled(DatabaseError databaseError) {
+                    Toast.makeText(context.getApplicationContext(), "Se ha interrumpido la conexión", Toast.LENGTH_SHORT).show();
+                }
+            });
+            
         } else {
             //TODO there are no information to retrieve
-            //Enter to Questions in this activity
+            //Back to the login
+            Intent mainIntent = new Intent(QuestionActivity.this, LoginActivity.class);
+            startActivity(mainIntent);
+            finish();
+            
         }
 
         Spinner generoSpin = (Spinner) findViewById(R.id.genero);
@@ -47,6 +81,7 @@ public class QuestionActivity extends AppCompatActivity {
         ArrayAdapter<String> edadedAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_dropdown_item, this.edadesList);
         generoSpin.setAdapter(generoAdapter);
         edadesSpin.setAdapter(edadedAdapter);
+      
     }
 
     public void registrarInfo(View v) {

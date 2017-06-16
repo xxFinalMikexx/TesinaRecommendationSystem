@@ -97,32 +97,80 @@ public class QuestionActivity extends AppCompatActivity {
             case "Entre 15 y 25":
                 edadTipo = 1;
                 break;
-            case "Entre 26 y 40":
+            case "Entre 26 y 35":
                 edadTipo = 2;
                 break;
-            case "Entre 41 y 60":
+            case "Entre 36 y 45":
                 edadTipo = 3;
                 break;
-            case "Mayor de 60":
+            case "Mayor de 45":
                 edadTipo = 4;
                 break;
             default:
                 edadTipo = -1;
         }
+        
+        int tipoUsuario = getUserType(generoSeleccionado, edadTipo);
 
         String nombreSeleccionado = nombreUsuario.getText().toString();
 
         mDatabase = FirebaseDatabase.getInstance().getReference();
 
-        Users user = new Users(userId, nombreSeleccionado, generoSeleccionado, edadTipo, -1, email);
+        Users user = new Users(userId, nombreSeleccionado, generoSeleccionado, edadTipo, tipoUsuario, email);
 
         DatabaseReference products = mFirebaseDatabaseReference.child("Users");
         String key = mFirebaseDatabaseReference.child("Users").push().getKey();
 
-        mDatabase.child("users").child(key).setValue(user);
+        mDatabase.child("Users").child(key).setValue(user);
 
         Intent mainIntent = new Intent(QuestionActivity.this, MainActivity.class);
         startActivity(mainIntent);
         finish();
     }
+    
+    public int getUserType(String genero, int edad) {
+        int genero = -1;
+        switch(genero) {
+            case "Masculino":
+                genero = 1;
+                break;
+            case "Femenino":
+                genero = 2;
+                break;
+        }
+        
+        int userType = -1;
+        if(genero == 1) {
+            if(edad == 1) {
+                userType = 1;
+            } else if(edad == 2) {
+                userType = 2;
+            } else if(edad == 3) {
+                userType = 3;
+            } else if(edad == 4) {
+                userType = 4;
+            } else {
+                //TODO not defined   
+                userType = -1;
+            }
+        } else if(genero == 2) {
+            if(edad == 1) {
+                userType = 5;
+            } else if(edad == 2) {
+                userType = 6;
+            } else if(edad == 3) {
+                userType = 7;
+            } else if(edad == 4) {
+                userType = 8;
+            } else {
+                //TODO not defined   
+                userType = -1;
+            }
+        } else {
+            //TODO not defined   
+            userType = -1
+        }
+    }
+    
+    return userType;
 }

@@ -46,7 +46,7 @@ public class QuestionActivity extends AppCompatActivity {
                             Users userObj = userSnap.getValue(Users.class);
                             if(userObj.getUserId().equals(userId)) {
                                 /*User has already answered the questions. Go directly to */
-                                Intent mainIntent = new Intent(QuestionActivity.this, PrincipalActivity.class);
+                                Intent mainIntent = new Intent(QuestionActivity.this, MainActivity.class);
                                 startActivity(mainIntent);
                                 finish();
                                 break;

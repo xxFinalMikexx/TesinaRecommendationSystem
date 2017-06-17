@@ -7,10 +7,14 @@ import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.Spinner;
+import android.widget.Toast;
 
 import com.example.xxfin.tesinarecommendationsystem.Objects.Users;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 
 public class QuestionActivity extends AppCompatActivity {
 
@@ -28,6 +32,8 @@ public class QuestionActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_question);
         
+        mFirebaseDatabaseReference = FirebaseDatabase.getInstance().getReference();
+        
         Bundle extras = getIntent().getExtras();
         if(extras != null) {
             email = (String) extras.get("email");
@@ -35,9 +41,41 @@ public class QuestionActivity extends AppCompatActivity {
             
             //TODO retrieve information from DB
             //Ignores questions and go directly to activity
+            /*Firebase reference to DB to get current user information*/
+            mFirebaseDatabaseReference.child("users").addValueEventListener(new ValueEventListener() {
+                @Override
+                public void onDataChange(DataSnapshot dataSnapshot) {
+                    try{
+                        for (DataSnapshot userSnap : dataSnapshot.getChildren()) {
+                            Users userObj = userSnap.getValue(Users.class);
+                            if(userObj.getUserId().equals(userId)) {
+                                /*User has already answered the questions. Go directly to */
+                                Intent mainIntent = new Intent(QuestionActivity.this, MainActivity.class);
+                                startActivity(mainIntent);
+                                finish();
+                                break;
+                            }
+                        }
+
+                    } catch (Exception ex) {
+                        Toast.makeText(getApplicationContext(), ex.getMessage(), Toast.LENGTH_SHORT).show();
+
+                    }
+                }
+
+                @Override
+                public void onCancelled(DatabaseError databaseError) {
+                    Toast.makeText(getApplicationContext(), "Se ha interrumpido la conexión", Toast.LENGTH_SHORT).show();
+                }
+            });
+            
         } else {
             //TODO there are no information to retrieve
-            //Enter to Questions in this activity
+            //Back to the login
+            Intent mainIntent = new Intent(QuestionActivity.this, LoginActivity.class);
+            startActivity(mainIntent);
+            finish();
+            
         }
 
         Spinner generoSpin = (Spinner) findViewById(R.id.genero);
@@ -47,6 +85,7 @@ public class QuestionActivity extends AppCompatActivity {
         ArrayAdapter<String> edadedAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_dropdown_item, this.edadesList);
         generoSpin.setAdapter(generoAdapter);
         edadesSpin.setAdapter(edadedAdapter);
+      
     }
 
     public void registrarInfo(View v) {
@@ -62,32 +101,79 @@ public class QuestionActivity extends AppCompatActivity {
             case "Entre 15 y 25":
                 edadTipo = 1;
                 break;
-            case "Entre 26 y 40":
+            case "Entre 26 y 35":
                 edadTipo = 2;
                 break;
-            case "Entre 41 y 60":
+            case "Entre 36 y 45":
                 edadTipo = 3;
                 break;
-            case "Mayor de 60":
+            case "Mayor de 45":
                 edadTipo = 4;
                 break;
             default:
                 edadTipo = -1;
         }
+        
+        int tipoUsuario = getUserType(generoSeleccionado, edadTipo);
 
         String nombreSeleccionado = nombreUsuario.getText().toString();
 
         mFirebaseDatabaseReference = FirebaseDatabase.getInstance().getReference();
 
-        Users user = new Users(userId, nombreSeleccionado, generoSeleccionado, edadTipo, -1, email);
+        Users user = new Users(userId, nombreSeleccionado, generoSeleccionado, edadTipo, tipoUsuario, email);
 
-        DatabaseReference products = mFirebaseDatabaseReference.child("Users");
         String key = mFirebaseDatabaseReference.child("Users").push().getKey();
-
-        mFirebaseDatabaseReference.child("users").child(key).setValue(user);
+        mFirebaseDatabaseReference.child("Users").child(key).setValue(user);
 
         Intent mainIntent = new Intent(QuestionActivity.this, PrincipalActivity.class);
         startActivity(mainIntent);
         finish();
     }
+    
+    public int getUserType(String genero, int edad) {
+        int generoType = -1;
+        switch(genero) {
+            case "Masculino":
+                generoType = 1;
+                break;
+            case "Femenino":
+                generoType = 2;
+                break;
+        }
+        
+        int userType = -1;
+        if(generoType == 1) {
+            if(edad == 1) {
+                userType = 1;
+            } else if(edad == 2) {
+                userType = 2;
+            } else if(edad == 3) {
+                userType = 3;
+            } else if(edad == 4) {
+                userType = 4;
+            } else {
+                //TODO not defined   
+                userType = -1;
+            }
+        } else if(generoType == 2) {
+            if(edad == 1) {
+                userType = 5;
+            } else if(edad == 2) {
+                userType = 6;
+            } else if(edad == 3) {
+                userType = 7;
+            } else if(edad == 4) {
+                userType = 8;
+            } else {
+                //TODO not defined   
+                userType = -1;
+            }
+        } else {
+            //TODO not defined   
+            userType = -1;
+        }
+        return userType;
+    }
+    
+
 }

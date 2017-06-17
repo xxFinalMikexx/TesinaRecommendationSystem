@@ -19,10 +19,12 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void enviarAporte(View v) {
-
+        Intent aporteIntent = new Intent(MainActivity.this, ComentarioActivity.class);
+        this.startActivity(aporteIntent);
     }
 
     public void buscarRecomendacion(View v) {
-
+        Intent recomendacionIntent = new Intent(MainActivity.this, ComentarioActivity.class);
+        this.startActivity(recomendacionIntent);
     }
 }

@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">TesinaRecommendationSystem</string>
+    <string name="app_name">Sistema de Recomendación</string>
     <string name="title_activity_principal">PrincipalActivity</string>
     <string name="title_activity_login">Sign in</string>
 

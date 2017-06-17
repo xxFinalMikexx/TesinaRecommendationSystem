@@ -17,8 +17,7 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
 public class QuestionActivity extends AppCompatActivity {
-
-    private DatabaseReference mDatabase;
+    /*Firebase DB reference*/
     private DatabaseReference mFirebaseDatabaseReference;
 
     private String edadesList[] = {"Entre 15 y 25", "Entre 26 y 35", "Entre 36 y 45", "Mayor de 45"};

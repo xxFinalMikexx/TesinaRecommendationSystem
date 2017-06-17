@@ -18,7 +18,9 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.Spinner;
 
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
@@ -56,7 +58,12 @@ public class ComentarioActivity extends AppCompatActivity implements
 
     /*Views and buttons*/
     private ImageView fotoUsuario;
-    ProgressDialog prDialog;
+    private ProgressDialog prDialog;
+    private Spinner spinGustar;
+    private Spinner spinPrimera;
+    private EditText editComentario;
+    
+
 
     /*Static code of result*/
     private static final int REQUEST_IMAGE_CAPTURE = 1;
@@ -70,6 +77,9 @@ public class ComentarioActivity extends AppCompatActivity implements
         this.fotoUsuario = (ImageView) findViewById(R.id.fotoUsuario);
         this.imageWidth = 200;
         this.imageHeight = 200;
+
+
+
         
         /*Revisa configuración de GPS*/
         if (!gpsEstaActivado()) {
@@ -101,8 +111,8 @@ public class ComentarioActivity extends AppCompatActivity implements
 
         Comments comment = new Comments();
 
-        DatabaseReference products = mFirebaseDatabaseReference.child("Comments");
         String key = mFirebaseDatabaseReference.child("Comments").push().getKey();
+
 
         mDatabase.child("Comments").child(key).setValue(comment);
     }

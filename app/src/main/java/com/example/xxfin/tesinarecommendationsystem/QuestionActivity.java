@@ -37,37 +37,6 @@ public class QuestionActivity extends AppCompatActivity {
         if(extras != null) {
             email = (String) extras.get("email");
             userId = (String) extras.get("userId");
-            
-            //TODO retrieve information from DB
-            //Ignores questions and go directly to activity
-            /*Firebase reference to DB to get current user information*/
-            mFirebaseDatabaseReference.child("users").addValueEventListener(new ValueEventListener() {
-                @Override
-                public void onDataChange(DataSnapshot dataSnapshot) {
-                    try{
-                        for (DataSnapshot userSnap : dataSnapshot.getChildren()) {
-                            Users userObj = userSnap.getValue(Users.class);
-                            if(userObj.getUserId().equals(userId)) {
-                                /*User has already answered the questions. Go directly to */
-                                Intent mainIntent = new Intent(QuestionActivity.this, MainActivity.class);
-                                startActivity(mainIntent);
-                                finish();
-                                break;
-                            }
-                        }
-
-                    } catch (Exception ex) {
-                        Toast.makeText(getApplicationContext(), ex.getMessage(), Toast.LENGTH_SHORT).show();
-
-                    }
-                }
-
-                @Override
-                public void onCancelled(DatabaseError databaseError) {
-                    Toast.makeText(getApplicationContext(), "Se ha interrumpido la conexión", Toast.LENGTH_SHORT).show();
-                }
-            });
-            
         } else {
             //TODO there are no information to retrieve
             //Back to the login

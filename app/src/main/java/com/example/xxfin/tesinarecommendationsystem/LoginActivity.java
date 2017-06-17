@@ -38,9 +38,15 @@ import java.util.List;
 import static android.Manifest.permission.READ_CONTACTS;
 
 /*Firebase imports*/
+import com.example.xxfin.tesinarecommendationsystem.Objects.Users;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.*;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 
 /**
  * A login screen that offers login via email/password.
@@ -49,6 +55,7 @@ public class LoginActivity extends AppCompatActivity {
     /*Firebase*/
     private FirebaseAuth mAuth;
     private FirebaseAuth.AuthStateListener mAuthListener;
+    private DatabaseReference mFirebaseDatabaseReference;
     
     /*Buttons and Views*/
     private EditText mEmailField;
@@ -64,6 +71,7 @@ public class LoginActivity extends AppCompatActivity {
         
         //Initialize authentication
         mAuth = FirebaseAuth.getInstance();
+        mFirebaseDatabaseReference = FirebaseDatabase.getInstance().getReference();
         
         // Views
         mEmailField = (EditText) findViewById(R.id.field_email);
@@ -81,13 +89,43 @@ public class LoginActivity extends AppCompatActivity {
         };
     }
     
-    private void updateUI(FirebaseUser user) {
+    private void updateUI(final FirebaseUser user) {
         if (user != null) {
-            Intent intent = new Intent(this, QuestionActivity.class);
-            intent.putExtra("email", user.getEmail());
-            intent.putExtra("userId", user.getUid());
+            //TODO retrieve information from DB
+            //Ignores questions and go directly to activity
+            /*Firebase reference to DB to get current user information*/
+            mFirebaseDatabaseReference.child("users").addValueEventListener(new ValueEventListener() {
+                @Override
+                public void onDataChange(DataSnapshot dataSnapshot) {
+                    try{
+                        for (DataSnapshot userSnap : dataSnapshot.getChildren()) {
+                            Users userObj = userSnap.getValue(Users.class);
+                            if(userObj.getUserId().equals(user)) {
+                                /*User has already answered the questions. Go directly to */
+                                Intent mainIntent = new Intent(LoginActivity.this, MainActivity.class);
+                                startActivity(mainIntent);
+                                finish();
+                                break;
+                            } else {
+                                Intent intent = new Intent(LoginActivity.this, QuestionActivity.class);
+                                intent.putExtra("email", user.getEmail());
+                                intent.putExtra("userId", user.getUid());
 
-            this.startActivity(intent);
+                                startActivity(intent);
+                            }
+                        }
+
+                    } catch (Exception ex) {
+                        Toast.makeText(getApplicationContext(), ex.getMessage(), Toast.LENGTH_SHORT).show();
+
+                    }
+                }
+
+                @Override
+                public void onCancelled(DatabaseError databaseError) {
+                    Toast.makeText(getApplicationContext(), "Se ha interrumpido la conexión", Toast.LENGTH_SHORT).show();
+                }
+            });
         } else {
             findViewById(R.id.email_password_buttons).setVisibility(View.VISIBLE);
             findViewById(R.id.email_password_fields).setVisibility(View.VISIBLE);

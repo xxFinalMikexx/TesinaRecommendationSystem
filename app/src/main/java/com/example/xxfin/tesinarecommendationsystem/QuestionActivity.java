@@ -17,7 +17,7 @@ public class QuestionActivity extends AppCompatActivity {
     private DatabaseReference mDatabase;
     private DatabaseReference mFirebaseDatabaseReference;
 
-    private String edadesList[] = {"Entre 15 y 25", "Entre 26 y 40", "Entre 41 y 60", "Mayor de 60"};
+    private String edadesList[] = {"Entre 15 y 25", "Entre 26 y 35", "Entre 36 y 45", "Mayor de 45"};
     private String generoList[] = {"Masculino", "Femenino"};
     
     private String email = "";
@@ -77,16 +77,16 @@ public class QuestionActivity extends AppCompatActivity {
 
         String nombreSeleccionado = nombreUsuario.getText().toString();
 
-        mDatabase = FirebaseDatabase.getInstance().getReference();
+        mFirebaseDatabaseReference = FirebaseDatabase.getInstance().getReference();
 
         Users user = new Users(userId, nombreSeleccionado, generoSeleccionado, edadTipo, -1, email);
 
         DatabaseReference products = mFirebaseDatabaseReference.child("Users");
         String key = mFirebaseDatabaseReference.child("Users").push().getKey();
 
-        mDatabase.child("users").child(key).setValue(user);
+        mFirebaseDatabaseReference.child("users").child(key).setValue(user);
 
-        Intent mainIntent = new Intent(QuestionActivity.this, MainActivity.class);
+        Intent mainIntent = new Intent(QuestionActivity.this, PrincipalActivity.class);
         startActivity(mainIntent);
         finish();
     }

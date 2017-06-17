@@ -1,9 +1,24 @@
 package com.example.xxfin.tesinarecommendationsystem;
 
+import android.app.ProgressDialog;
+import android.content.Context;
+import android.content.DialogInterface;
+import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.database.Cursor;
+import android.graphics.Bitmap;
 import android.location.Location;
+import android.location.LocationManager;
+import android.net.Uri;
+import android.os.Environment;
+import android.provider.MediaStore;
+import android.support.v4.app.ActivityCompat;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
+import android.widget.ImageView;
 
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
@@ -13,7 +28,13 @@ import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationServices;
 
-import com.example.xxfin.recommendationsystem.objects.*;
+import com.example.xxfin.tesinarecommendationsystem.Objects.Comments;
+
+import java.io.File;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
+import static android.graphics.BitmapFactory.decodeFile;
 
 public class ComentarioActivity extends AppCompatActivity implements
         GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
@@ -25,17 +46,18 @@ public class ComentarioActivity extends AppCompatActivity implements
     private int imageWidth;
     private int imageHeight;
     private String rutaImagen;
-    
+    private Uri uriImagen;
+
     public GoogleApiClient mGoogleApiClient;
     public Location mLastLocation;
-    
+
     private DatabaseReference mDatabase;
     private DatabaseReference mFirebaseDatabaseReference;
-    
+
     /*Views and buttons*/
     private ImageView fotoUsuario;
     ProgressDialog prDialog;
-    
+
     /*Static code of result*/
     private static final int REQUEST_IMAGE_CAPTURE = 1;
 
@@ -46,23 +68,23 @@ public class ComentarioActivity extends AppCompatActivity implements
         
         /*Initialize views and buttons*/
         this.fotoUsuario = (ImageView) findViewById(R.id.fotoUsuario);
-        this.width = 200;
-        this.height = 200;
+        this.imageWidth = 200;
+        this.imageHeight = 200;
         
         /*Revisa configuración de GPS*/
-        if(!gpsEstaActivado()) {
+        if (!gpsEstaActivado()) {
             solicitarActivacionGPS();
         }
         
         /*Crea cliente de para la localización*/
         crearClienteLocalizacion();
     }
-    
+
     @Override
     protected void onStart() {
         super.onStart();
 
-        if(gpsEstaActivado()) // Comprueba si el gps del dispositivo se encuentra activado
+        if (gpsEstaActivado()) // Comprueba si el gps del dispositivo se encuentra activado
             mGoogleApiClient.connect(); // Conecta con el servicio de ubicación de Google
     }
 
@@ -71,31 +93,32 @@ public class ComentarioActivity extends AppCompatActivity implements
         File archivoImagen = crearArchivoSalida();
         uriImagen = Uri.fromFile(archivoImagen);
         takePicture.putExtra(MediaStore.EXTRA_OUTPUT, uriImagen);
-        startActivityForResult(takePictureIntent, REQUEST_IMAGE_CAPTURE);   
+        startActivityForResult(takePicture, REQUEST_IMAGE_CAPTURE);
     }
-    
+
     public void enviarAporte(View v) {
         mDatabase = FirebaseDatabase.getInstance().getReference();
-        
-        Comments comment = new Comment();
-        
+
+        Comments comment = new Comments();
+
         DatabaseReference products = mFirebaseDatabaseReference.child("Comments");
         String key = mFirebaseDatabaseReference.child("Comments").push().getKey();
 
         mDatabase.child("Comments").child(key).setValue(comment);
     }
-    
+
     /**
      * Metodo que crea un archivo de imagen vacio donde se va a guardar la foto capturada
+     *
      * @return archivo creado
      */
-    protected File crearArchivoSalida(){
+    protected File crearArchivoSalida() {
         File mediaStorageDir = new File(Environment.getExternalStoragePublicDirectory(
                 Environment.DIRECTORY_PICTURES), "Recommendation_System");
 
         // Create the storage directory if it does not exist
-        if (!mediaStorageDir.exists()){
-            if (!mediaStorageDir.mkdirs()){
+        if (!mediaStorageDir.exists()) {
+            if (!mediaStorageDir.mkdirs()) {
                 return null;
             }
         }
@@ -105,10 +128,10 @@ public class ComentarioActivity extends AppCompatActivity implements
         File mediaFile;
 
         mediaFile = new File(mediaStorageDir.getPath() + File.separator +
-                    "IMG_"+ timeStamp + ".jpg");
+                "IMG_" + timeStamp + ".jpg");
         return mediaFile;
     }
-    
+
     /**
      * Metodo que se llama al cambiar a una nueva vista o al cerrar la aplicación
      */
@@ -122,13 +145,13 @@ public class ComentarioActivity extends AppCompatActivity implements
 
     public void obtenerCoordenadas() {
         Location coordenadas = null;
-        
+
         LocationManager location = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
 
         this.latitud = coordenadas.getLatitude();
         this.longitud = coordenadas.getLongitude();
     }
-    
+
     public synchronized void crearClienteLocalizacion() {
         try {
             mGoogleApiClient = new GoogleApiClient.Builder(this)
@@ -136,13 +159,13 @@ public class ComentarioActivity extends AppCompatActivity implements
                     .addOnConnectionFailedListener((GoogleApiClient.OnConnectionFailedListener) this)
                     .addApi(LocationServices.API)
                     .build();
-        } catch(NullPointerException npe) {
+        } catch (NullPointerException npe) {
             throw new NullPointerException();
-        } catch(IllegalStateException ise) {
+        } catch (IllegalStateException ise) {
             throw new IllegalStateException();
         }
     }
-    
+
     /**
      * Una vez que se conectó con los servicios de ubicación de google, obtiene las coordenadas de la posición actual
      *
@@ -150,12 +173,23 @@ public class ComentarioActivity extends AppCompatActivity implements
      */
     @Override
     public void onConnected(Bundle connectionHint) {
-        mLastLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient); // Obtiene la última localización conocida del dispositivo
-        if (mLastLocation != null) {
-            this.latitud = mLastLocation.getLatitude(); // Asignar latitud a variable de clase
-            this.longitud = mLastLocation.getLongitude(); // Asignar longitud a variable de clase
+        if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            // TODO: Consider calling
+            //    ActivityCompat#requestPermissions
+            // here to request the missing permissions, and then overriding
+            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+            //                                          int[] grantResults)
+            // to handle the case where the user grants the permission. See the documentation
+            // for ActivityCompat#requestPermissions for more details.
+            return;
         } else {
-            Lod.d("Comentarios Actividad", "mLastLocation nulo. No se obtuvieron las coordenadas");   
+            mLastLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient); // Obtiene la última localización conocida del dispositivo
+            if (mLastLocation != null) {
+                this.latitud = mLastLocation.getLatitude(); // Asignar latitud a variable de clase
+                this.longitud = mLastLocation.getLongitude(); // Asignar longitud a variable de clase
+            } else {
+                Log.d("Comentarios Actividad", "mLastLocation nulo. No se obtuvieron las coordenadas");
+            }
         }
     }
 
@@ -179,7 +213,7 @@ public class ComentarioActivity extends AppCompatActivity implements
         Log.d("Comentarios Actividad", "Conexión suspendida");
         //mGoogleApiClient.connect();
     }
-    
+
     public boolean solicitarActivacionGPS() {
         try {
             final AlertDialog.Builder builder = new AlertDialog.Builder(this);
@@ -204,27 +238,27 @@ public class ComentarioActivity extends AppCompatActivity implements
             return false;
         }
     }
-    
+
     /**
      * Metodo que verifica si el servicio de gps se encuentra activado en el telefono
      *
      * @return true si el gps esta activado, false en caso contrario
      */
-    private boolean gpsEstaActivado(){
+    private boolean gpsEstaActivado() {
         LocationManager locationManager;
         String context = Context.LOCATION_SERVICE;
-        locationManager = (LocationManager)getSystemService(context); // Obtener el servicio de localizacion
+        locationManager = (LocationManager) getSystemService(context); // Obtener el servicio de localizacion
 
         return locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER); // Verifica si el servicio de localizacion esa disponible
     }
-    
+
     /**
      * Metodo que obtiene la ruta absoluta de una imagen
      *
      * @param imagenSeleccionada Uri de la imagen
      * @return string con la ruta absoluta de la imagen
      */
-    public String obtenerRutaRealUri(Uri imagenSeleccionada){
+    public String obtenerRutaRealUri(Uri imagenSeleccionada) {
         try {
             String[] informacion_imagen = {MediaStore.Images.Media.DATA}; // Obtener la metadata de todas las imagenes guardadas en el dispositivo
             Cursor cursor = getContentResolver().query(imagenSeleccionada, informacion_imagen, null, null, null); // Buscar la imagen que coincide con el Uri dado
@@ -235,25 +269,22 @@ public class ComentarioActivity extends AppCompatActivity implements
             return imagenSeleccionada.getPath(); // Regresar ruta decodificada
         }
     }
-    
+
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if(requestCode == REQUEST_IMAGE_CAPTURE && resultCode == RESULT_OK) {
+        if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == RESULT_OK) {
             Uri imagenSeleccionada = data.getData();
             this.rutaImagen = obtenerRutaRealUri(imagenSeleccionada);
-                        
-            if(this.longitud != 0.0 && this.latitud != 0.0) {
-                File imagenUri = new File(imagenSeleccionada);
-                
-                Picasso.with(this).load(imagenUri).into(this.fotoUsuario);
-                
+
+            if (this.longitud != 0.0 && this.latitud != 0.0) {
                 /*Forma alternativa para cargar la imagen en caso de que no funcione*/
-                /*Bitmap bmp = decodeFile(this.rutaImagen);
+                Bitmap bmp = decodeFile(this.rutaImagen);
                 this.fotoUsuario.setImageBitmap(bmp);
                 prDialog = new ProgressDialog(this);
-                prDialog.setCancelable(false);*/
+                prDialog.setCancelable(false);
             } else {
                 //TODO error
+            }
         }
     }
 }

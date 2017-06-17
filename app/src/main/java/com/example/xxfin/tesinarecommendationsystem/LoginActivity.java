@@ -95,7 +95,7 @@ public class LoginActivity extends AppCompatActivity {
         }
     }
     
-    private void createAccount(View v) {
+    public void createAccount(View v) {
             String email = mEmailField.getText().toString();
             String password = mPasswordField.getText().toString();
             
@@ -116,7 +116,7 @@ public class LoginActivity extends AppCompatActivity {
             }
     }
     
-    private void signIn(View v) {
+    public void signIn(View v) {
         String email = mEmailField.getText().toString();
         String password = mPasswordField.getText().toString();
         

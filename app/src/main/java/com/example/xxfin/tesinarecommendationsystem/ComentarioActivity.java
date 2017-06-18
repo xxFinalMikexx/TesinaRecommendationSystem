@@ -21,6 +21,7 @@ import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.Spinner;
+import android.widget.Toast;
 
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
@@ -62,11 +63,12 @@ public class ComentarioActivity extends AppCompatActivity implements
     private Spinner spinGustar;
     private Spinner spinPrimera;
     private EditText editComentario;
-    
+    private String placeId;
 
 
     /*Static code of result*/
     private static final int REQUEST_IMAGE_CAPTURE = 1;
+    private static final int REQUEST_MAP_RESULT = 2;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -77,9 +79,9 @@ public class ComentarioActivity extends AppCompatActivity implements
         this.fotoUsuario = (ImageView) findViewById(R.id.fotoUsuario);
         this.imageWidth = 200;
         this.imageHeight = 200;
-
-
-
+        this.spinGustar = (Spinner) findViewById(R.id.spinGustar);
+        this.spinPrimera = (Spinner) findViewById(R.id.spinPrimera);
+        this.editComentario = (EditText) findViewById(R.id.editComentario);
         
         /*Revisa configuración de GPS*/
         if (!gpsEstaActivado()) {
@@ -107,11 +109,21 @@ public class ComentarioActivity extends AppCompatActivity implements
     }
 
     public void enviarAporte(View v) {
+        if(this.rutaImagen == "") {
+            Toast.makeText(getApplicationContext(), "Debes seleccionar una imagen para continuar", Toast.LENGTH_LONG).show();
+            return;
+        }
+        if(this.placeId == "") {
+
+        }
         mDatabase = FirebaseDatabase.getInstance().getReference();
 
         Comments comment = new Comments();
-
         String key = mFirebaseDatabaseReference.child("Comments").push().getKey();
+        comment.setCommentId(key);
+        comment.setLikeVisit(this.spinGustar.getSelectedItem().toString());
+        comment.setFirstTime(this.spinPrimera.getSelectedItem().toString());
+        comment.setComments(this.editComentario.getText().toString());
 
 
         mDatabase.child("Comments").child(key).setValue(comment);
@@ -292,9 +304,14 @@ public class ComentarioActivity extends AppCompatActivity implements
                 this.fotoUsuario.setImageBitmap(bmp);
                 prDialog = new ProgressDialog(this);
                 prDialog.setCancelable(false);
+
             } else {
                 //TODO error
             }
+        }
+
+        if(requestCode == REQUEST_MAP_RESULT && resultCode == RESULT_OK) {
+            this.placeId = data.getStringExtra("place_id");
         }
     }
 }

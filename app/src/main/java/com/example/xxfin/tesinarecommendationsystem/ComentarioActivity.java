@@ -23,6 +23,12 @@ import android.widget.ImageView;
 import android.widget.Spinner;
 import android.widget.Toast;
 
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.Volley;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.auth.*;
@@ -32,6 +38,9 @@ import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationServices;
 
 import com.example.xxfin.tesinarecommendationsystem.Objects.Comments;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 import java.io.File;
 import java.text.SimpleDateFormat;
@@ -50,6 +59,8 @@ public class ComentarioActivity extends AppCompatActivity implements
     private int imageHeight;
     private String rutaImagen;
     private Uri uriImagen;
+    private String email = "";
+    private String userId = "";
 
     public GoogleApiClient mGoogleApiClient;
     public Location mLastLocation;
@@ -69,6 +80,7 @@ public class ComentarioActivity extends AppCompatActivity implements
     /*Static code of result*/
     private static final int REQUEST_IMAGE_CAPTURE = 1;
     private static final int REQUEST_MAP_RESULT = 2;
+    private static final String API_KEY = "AIzaSyALTyezzge7Tz1HdQMfBrUyfkJMWdk_RCE";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -87,6 +99,10 @@ public class ComentarioActivity extends AppCompatActivity implements
         if (!gpsEstaActivado()) {
             solicitarActivacionGPS();
         }
+
+        Bundle extras = getIntent().getExtras();
+        this.email = (String) extras.get("email");
+        this.userId = (String) extras.get("userId");
         
         /*Crea cliente de para la localización*/
         crearClienteLocalizacion();
@@ -114,7 +130,8 @@ public class ComentarioActivity extends AppCompatActivity implements
             return;
         }
         if(this.placeId == "") {
-
+            Toast.makeText(getApplicationContext(), "La ubicación elegida no es válida. Intenta nuevamente", Toast.LENGTH_LONG).show();
+            return;
         }
         mDatabase = FirebaseDatabase.getInstance().getReference();
 
@@ -124,7 +141,9 @@ public class ComentarioActivity extends AppCompatActivity implements
         comment.setLikeVisit(this.spinGustar.getSelectedItem().toString());
         comment.setFirstTime(this.spinPrimera.getSelectedItem().toString());
         comment.setComments(this.editComentario.getText().toString());
-
+        comment.setPlaceId(obtenPlaceId());
+        comment.setPhotoRef(this.rutaImagen);
+        comment.setUserId(this.userId);
 
         mDatabase.child("Comments").child(key).setValue(comment);
     }
@@ -172,6 +191,48 @@ public class ComentarioActivity extends AppCompatActivity implements
 
         this.latitud = coordenadas.getLatitude();
         this.longitud = coordenadas.getLongitude();
+    }
+
+    public String obtenPlaceId() {
+        String placeId = "";
+        if(this.longitud != 0.0 && this.latitud != 0.0) {
+            RequestQueue queue = Volley.newRequestQueue(this);
+
+            StringBuilder googlePlacesUrl = new StringBuilder("http://maps.google.com/maps/api/geocode/json?");
+            googlePlacesUrl.append("latlng=").append(latitud).append(",").append(longitud);
+            googlePlacesUrl.append("&radious=").append(5000);
+            googlePlacesUrl.append("&key=").append(API_KEY);
+
+            JsonObjectRequest placeRequest = new JsonObjectRequest (
+                    Request.Method.GET,
+                    googlePlacesUrl.toString(),
+                    null,
+                    new Response.Listener<JSONObject>() {
+                        @Override
+                        public void onResponse(JSONObject response) {
+                            //Toast.makeText(DetectFacesActivity.this, response.toString(), Toast.LENGTH_LONG).show();
+                            setPlaceId(response);
+                        }
+                    }, new Response.ErrorListener() {
+                @Override
+                public void onErrorResponse(VolleyError error) {
+                    Toast.makeText(ComentarioActivity.this, error.toString(), Toast.LENGTH_LONG).show();
+                }
+            }
+            );
+            queue.add(placeRequest);
+        }
+        return this.placeId;
+    }
+
+    public void setPlaceId(JSONObject result) {
+        try {
+            JSONArray jsonArray = result.getJSONArray("results");
+            JSONObject place = jsonArray.getJSONObject(0);
+            this.placeId = place.getString("place_id");
+        } catch(Exception e) {
+            Toast.makeText(ComentarioActivity.this, e.getMessage(),Toast.LENGTH_LONG).show();
+        }
     }
 
     public synchronized void crearClienteLocalizacion() {

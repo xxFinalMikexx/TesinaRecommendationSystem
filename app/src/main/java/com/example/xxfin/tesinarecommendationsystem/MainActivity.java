@@ -12,15 +12,24 @@ import com.google.firebase.auth.*;
 
 public class MainActivity extends AppCompatActivity {
 
+    /*Variables para la actividad*/
+    private String email = "";
+    private String userId = "";
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        Bundle extras = getIntent().getExtras();
+        this.email = (String) extras.get("email");
+        this.userId = (String) extras.get("userId");
 
     }
 
     public void enviarAporte(View v) {
         Intent aporteIntent = new Intent(MainActivity.this, ComentarioActivity.class);
+        aporteIntent.putExtra("email", this.email);
+        aporteIntent.putExtra("userId", this.userId);
         this.startActivity(aporteIntent);
     }
 

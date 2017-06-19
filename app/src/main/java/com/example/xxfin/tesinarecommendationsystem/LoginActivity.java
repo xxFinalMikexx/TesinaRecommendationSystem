@@ -103,6 +103,8 @@ public class LoginActivity extends AppCompatActivity {
                             if(userObj.getUserId().equals(user)) {
                                 /*User has already answered the questions. Go directly to */
                                 Intent mainIntent = new Intent(LoginActivity.this, MainActivity.class);
+                                mainIntent.putExtra("email", user.getEmail());
+                                mainIntent.putExtra("userId", user.getUid());
                                 startActivity(mainIntent);
                                 finish();
                                 break;

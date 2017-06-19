@@ -35,6 +35,8 @@ public class MainActivity extends AppCompatActivity {
 
     public void buscarRecomendacion(View v) {
         Intent recomendacionIntent = new Intent(MainActivity.this, ComentarioActivity.class);
+        recomendacionIntent.putExtra("email", this.email);
+        recomendacionIntent.putExtra("userId", this.userId);
         this.startActivity(recomendacionIntent);
     }
 }

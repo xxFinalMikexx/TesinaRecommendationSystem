@@ -52,7 +52,8 @@
 
         <activity
             android:name=".MapSelectActivity"
-            android:label="@string/title_activity_map_select"></activity>
+            android:label="@string/title_activity_map_select" />
+        <activity android:name=".RecomendacionActivity"></activity>
     </application>
 
 </manifest>

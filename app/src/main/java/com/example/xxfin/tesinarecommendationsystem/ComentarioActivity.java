@@ -146,6 +146,8 @@ public class ComentarioActivity extends AppCompatActivity implements
         comment.setUserId(this.userId);
 
         mDatabase.child("Comments").child(key).setValue(comment);
+
+        this.finish();
     }
 
     /**

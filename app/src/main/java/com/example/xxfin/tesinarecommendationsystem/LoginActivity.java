@@ -40,6 +40,7 @@ import static android.Manifest.permission.READ_CONTACTS;
 /*Firebase imports*/
 import com.example.xxfin.tesinarecommendationsystem.Objects.Users;
 import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.*;
 import com.google.firebase.database.DataSnapshot;
@@ -70,7 +71,7 @@ public class LoginActivity extends AppCompatActivity {
         setContentView(R.layout.activity_login);
         
         //Initialize authentication
-        mAuth = FirebaseAuth.getInstance();
+        this.mAuth = FirebaseAuth.getInstance();
         mFirebaseDatabaseReference = FirebaseDatabase.getInstance().getReference();
         
         // Views
@@ -94,31 +95,44 @@ public class LoginActivity extends AppCompatActivity {
             //TODO retrieve information from DB
             //Ignores questions and go directly to activity
             /*Firebase reference to DB to get current user information*/
-            mFirebaseDatabaseReference.child("users").addValueEventListener(new ValueEventListener() {
+            mFirebaseDatabaseReference.child("Users").addValueEventListener(new ValueEventListener() {
                 @Override
                 public void onDataChange(DataSnapshot dataSnapshot) {
+                    Log.e("Login...", "Data changed...");
                     try{
-                        for (DataSnapshot userSnap : dataSnapshot.getChildren()) {
-                            Users userObj = userSnap.getValue(Users.class);
-                            if(userObj.getUserId().equals(user)) {
-                                /*User has already answered the questions. Go directly to */
-                                Intent mainIntent = new Intent(LoginActivity.this, MainActivity.class);
-                                mainIntent.putExtra("email", user.getEmail());
-                                mainIntent.putExtra("userId", user.getUid());
-                                startActivity(mainIntent);
-                                finish();
-                                break;
-                            } else {
-                                Intent intent = new Intent(LoginActivity.this, QuestionActivity.class);
-                                intent.putExtra("email", user.getEmail());
-                                intent.putExtra("userId", user.getUid());
+                        if(!dataSnapshot.hasChildren()) {
+                            Log.e("No usuario...", "Question activity start...");
+                            Intent intent = new Intent(LoginActivity.this, QuestionActivity.class);
+                            intent.putExtra("email", user.getEmail());
+                            intent.putExtra("userId", user.getUid());
 
-                                startActivity(intent);
+                            startActivity(intent);
+                        } else {
+                            for (DataSnapshot userSnap : dataSnapshot.getChildren()) {
+                                Users userObj = userSnap.getValue(Users.class);
+                                if(userObj.getUserId().equals(user.getUid())) {
+                                    Log.e("Usuario!!",user.getUid());
+                                /*User has already answered the questions. Go directly to */
+                                    Intent mainIntent = new Intent(LoginActivity.this, MainActivity.class);
+                                    mainIntent.putExtra("email", user.getEmail());
+                                    mainIntent.putExtra("userId", user.getUid());
+                                    startActivity(mainIntent);
+                                    finish();
+                                    break;
+                                } else {
+                                    Log.e("No usuario...", "Question activity start...");
+                                    Intent intent = new Intent(LoginActivity.this, QuestionActivity.class);
+                                    intent.putExtra("email", user.getEmail());
+                                    intent.putExtra("userId", user.getUid());
+
+                                    startActivity(intent);
+                                }
                             }
                         }
 
                     } catch (Exception ex) {
                         Toast.makeText(getApplicationContext(), ex.getMessage(), Toast.LENGTH_SHORT).show();
+                        Log.e("Error en UpdateUI", ex.getMessage());
 
                     }
                 }
@@ -142,39 +156,44 @@ public class LoginActivity extends AppCompatActivity {
             if(!validateForm()) {
                 return;   
             } else {
-                    // [START create_user_with_email]
-                    mAuth.createUserWithEmailAndPassword(email, password)
-                            .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
-                                @Override
-                                public void onComplete(@NonNull Task<AuthResult> task) {
-                                    if (!task.isSuccessful()) {
-                                        Toast.makeText(LoginActivity.this, "Error de creación de Sesión",
-                                                Toast.LENGTH_SHORT).show();
-                                    }
+                // [START create_user_with_email]
+                this.mAuth.createUserWithEmailAndPassword(email, password)
+                        .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
+                            @Override
+                            public void onComplete(@NonNull Task<AuthResult> task) {
+                                if (!task.isSuccessful()) {
+                                    Toast.makeText(LoginActivity.this, "Error de creación de Sesión",
+                                            Toast.LENGTH_SHORT).show();
                                 }
-                            });
+                            }
+                        });
             }
     }
     
     public void signIn(View v) {
         String email = mEmailField.getText().toString();
         String password = mPasswordField.getText().toString();
-        
+        Log.e("Iniciando sesión...", email + " -  " + password);
         if (!validateForm()) {
             return;
         } else {
-                // [START sign_in_with_email]
-                mAuth.signInWithEmailAndPassword(email, password)
-                        .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
-                            @Override
-                            public void onComplete(@NonNull Task<AuthResult> task) {
-                                Log.d(TAG, "signInWithEmail:onComplete:" + task.isSuccessful());
-                                if (!task.isSuccessful()) {
-                                    Toast.makeText(LoginActivity.this, "Error de inicio de Sesión",
-                                            Toast.LENGTH_SHORT).show();
-                                }
+            // [START sign_in_with_email]
+            this.mAuth.signInWithEmailAndPassword(email, password)
+                    .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
+                        @Override
+                        public void onComplete(@NonNull Task<AuthResult> task) {
+                            Log.d(TAG, "signInWithEmail:onComplete:" + task.isSuccessful());
+                            if (!task.isSuccessful()) {
+                                Toast.makeText(LoginActivity.this, "Error de inicio de Sesión",
+                                        Toast.LENGTH_SHORT).show();
                             }
-                        });
+                        }
+                    }).addOnFailureListener(this, new OnFailureListener() {
+                        @Override
+                        public void onFailure(@NonNull Exception e) {
+                            Log.e("Error :( ", e.getMessage());
+                        }
+                    });
         }
     }
     

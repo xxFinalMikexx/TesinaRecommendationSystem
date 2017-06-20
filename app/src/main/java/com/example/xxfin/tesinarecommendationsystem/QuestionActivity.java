@@ -93,7 +93,7 @@ public class QuestionActivity extends AppCompatActivity {
         String key = mFirebaseDatabaseReference.child("Users").push().getKey();
         mFirebaseDatabaseReference.child("Users").child(key).setValue(user);
 
-        Intent mainIntent = new Intent(QuestionActivity.this, PrincipalActivity.class);
+        Intent mainIntent = new Intent(QuestionActivity.this, MainActivity.class);
         startActivity(mainIntent);
         finish();
     }

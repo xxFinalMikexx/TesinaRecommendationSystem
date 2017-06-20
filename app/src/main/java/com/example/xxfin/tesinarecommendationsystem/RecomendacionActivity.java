@@ -1,11 +1,20 @@
 package com.example.xxfin.tesinarecommendationsystem;
 
+import android.content.Context;
+import android.content.DialogInterface;
+import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.location.Location;
+import android.location.LocationManager;
+import android.support.v4.app.ActivityCompat;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Spinner;
+import android.widget.Toast;
 
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
@@ -13,6 +22,11 @@ import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
+import com.example.xxfin.tesinarecommendationsystem.Objects.Comments;
+import com.example.xxfin.tesinarecommendationsystem.Objects.InfoPlace;
+import com.google.android.gms.maps.model.LatLng;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.auth.*;
@@ -22,8 +36,15 @@ import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationServices;
 
 import com.example.xxfin.tesinarecommendationsystem.Objects.Users;
+import com.google.firebase.database.ValueEventListener;
 
-public class RecomendacionActivity extends AppCompatActivity {
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.util.LinkedList;
+
+public class RecomendacionActivity extends AppCompatActivity implements
+        GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
 
     /*Local Variables*/
     private String email = "";
@@ -35,6 +56,10 @@ public class RecomendacionActivity extends AppCompatActivity {
     private Users userInfo;
     private LinkedList listaCercanos = new LinkedList();
     private LinkedList listaDB = new LinkedList();
+    private Spinner tipoSpin;
+    private Spinner rangoSpin;
+    private String tipoLugar = "";
+    private String rangoBusqueda = "";
 
     public GoogleApiClient mGoogleApiClient;
     public Location mLastLocation;
@@ -60,23 +85,23 @@ public class RecomendacionActivity extends AppCompatActivity {
 
         /*Crea cliente de para la localización*/
         crearClienteLocalizacion();
-        
-        if(!gpsEstaActivado()) {
+
+        if (!gpsEstaActivado()) {
             solicitarActivacionGPS();
         }
-        
+
         mAuth = FirebaseAuth.getInstance();
         mFirebaseDatabaseReference = FirebaseDatabase.getInstance().getReference();
         user = mAuth.getCurrentUser();
-        
+
         mFirebaseDatabaseReference.child("users").addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
 
-                try{
+                try {
                     for (DataSnapshot userSnap : dataSnapshot.getChildren()) {
                         Users userObj = userSnap.getValue(Users.class);
-                        if(userObj.getUserId().equals(user.getUid())) {
+                        if (userObj.getUserId().equals(user.getUid())) {
                             String userId = userObj.getUserId();
                             String userNombre = userObj.getNombre();
                             String userGenero = userObj.getGenero();
@@ -91,7 +116,7 @@ public class RecomendacionActivity extends AppCompatActivity {
                     }
 
                 } catch (Exception ex) {
-                    Toast.makeText(context.getApplicationContext(), ex.getMessage(), Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getApplicationContext(), ex.getMessage(), Toast.LENGTH_SHORT).show();
 
                 }
             }
@@ -102,19 +127,32 @@ public class RecomendacionActivity extends AppCompatActivity {
             }
         });
 
-        Spinner tipoSpin = (Spinner) findViewById(R.id.spinFiltro);
-        Spinner rangoSpin = (Spinner) findViewById(R.id.spinRango);
+        this.tipoSpin = (Spinner) findViewById(R.id.spinFiltro);
+        this.rangoSpin = (Spinner) findViewById(R.id.spinRango);
 
         ArrayAdapter<String> generoAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_dropdown_item, this.tipoLista);
         ArrayAdapter<String> edadedAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_dropdown_item, this.rangoLista);
         tipoSpin.setAdapter(generoAdapter);
         rangoSpin.setAdapter(edadedAdapter);
     }
-    
+
+    /**
+     * Metodo que verifica si el servicio de gps se encuentra activado en el telefono
+     *
+     * @return true si el gps esta activado, false en caso contrario
+     */
+    private boolean gpsEstaActivado() {
+        LocationManager locationManager;
+        String context = Context.LOCATION_SERVICE;
+        locationManager = (LocationManager) getSystemService(context); // Obtener el servicio de localizacion
+
+        return locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER); // Verifica si el servicio de localizacion esa disponible
+    }
+
     public void fillUserInformation(String userId, String nombre, String genero, int rangoEdad, int tipo, String email) {
         this.userInfo = new Users(userId, nombre, genero, rangoEdad, tipo, email);
     }
-    
+
     /**
      * Metodo que se llama cada vez que la vista se hace visible para el usuario
      */
@@ -122,10 +160,10 @@ public class RecomendacionActivity extends AppCompatActivity {
     protected void onStart() {
         super.onStart();
 
-        if(gpsEstaActivado()) // Comprueba si el gps del dispositivo se encuentra activado
+        if (gpsEstaActivado()) // Comprueba si el gps del dispositivo se encuentra activado
             mGoogleApiClient.connect(); // Conecta con el servicio de ubicación de Google
     }
-    
+
     /**
      * Metodo que se llama al cambiar a una nueva vista o al cerrar la aplicación
      */
@@ -136,7 +174,7 @@ public class RecomendacionActivity extends AppCompatActivity {
             mGoogleApiClient.disconnect(); // Detiene la conexión con el servicio de Google
         }
     }
-    
+
     /**
      * Una vez que se conectó con los servicios de ubicación de google, obtiene las coordenadas de la posición actual
      *
@@ -144,6 +182,16 @@ public class RecomendacionActivity extends AppCompatActivity {
      */
     @Override
     public void onConnected(Bundle connectionHint) {
+        if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            // TODO: Consider calling
+            //    ActivityCompat#requestPermissions
+            // here to request the missing permissions, and then overriding
+            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+            //                                          int[] grantResults)
+            // to handle the case where the user grants the permission. See the documentation
+            // for ActivityCompat#requestPermissions for more details.
+            return;
+        }
         mLastLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient); // Obtiene la última localización conocida del dispositivo
         if (mLastLocation != null) {
             this.latitud = mLastLocation.getLatitude(); // Asignar latitud a variable de clase
@@ -158,7 +206,7 @@ public class RecomendacionActivity extends AppCompatActivity {
      */
     @Override
     public void onConnectionFailed(ConnectionResult result) {
-        Toast.makeText(getApplicationContext(), "No se pudieron obtener las coordenadas", Toast.TOAST_LONG),.show();
+        Toast.makeText(getApplicationContext(), "No se pudieron obtener las coordenadas", Toast.LENGTH_LONG).show();
         //Log.d("ActividadPrincipal", "No se pudieron obtener las coordenadas");
     }
 
@@ -216,11 +264,11 @@ public class RecomendacionActivity extends AppCompatActivity {
     }
 
     public void buscarRecomendacion(View v) {
-        String tipoLugar = (Spinner) findViewById(R.id.spinFiltro).getSelectedItem().toString();
-        String rangoBusqueda = (Spinner) findViewById(R.id.spinRango).getSelectedItem().toString();
+        String tipoLugar = this.tipoSpin.getSelectedItem().toString();
+        String rangoBusqueda = this.rangoSpin.getSelectedItem().toString();
         
-        tipoLugar = getTipoLugar(tipoLugar);
-        rangoBusqueda = getRangoBusqueda(rangoBusqueda);
+        this.tipoLugar = getTipoLugar(tipoLugar);
+        this.rangoBusqueda = getRangoBusqueda(rangoBusqueda);
     }
     
     public void obtenerDetallesLugar(String placeId) {
@@ -244,7 +292,7 @@ public class RecomendacionActivity extends AppCompatActivity {
                 }, new Response.ErrorListener() {
             @Override
             public void onErrorResponse(VolleyError error) {
-                Toast.makeText(DetectFacesActivity.this, error.toString(), Toast.LENGTH_LONG).show();
+                Toast.makeText(RecomendacionActivity.this, error.toString(), Toast.LENGTH_LONG).show();
             }
         });
         queue.add(placeRequest);
@@ -273,18 +321,18 @@ public class RecomendacionActivity extends AppCompatActivity {
                     }, new Response.ErrorListener() {
                 @Override
                 public void onErrorResponse(VolleyError error) {
-                    Toast.makeText(DetectFacesActivity.this, error.toString(), Toast.LENGTH_LONG).show();
+                    Toast.makeText(RecomendacionActivity.this, error.toString(), Toast.LENGTH_LONG).show();
                 }
             });
             queue.add(detailsRequest);
         } catch(Exception e) {
-            Toast.makeText(DetectFacesActivity.this, "Error en string NearbySearch", Toast.LENGTH_LONG).show();
+            Toast.makeText(RecomendacionActivity.this, "Error en string NearbySearch", Toast.LENGTH_LONG).show();
         }
     }
     
     public void obtenerInfoLugar(JSONObject result) {
         try {
-            InfoLugar lugarActual = new InfoLugar();
+            InfoPlace lugarActual = new InfoPlace();
             
             JSONArray jsonArray = result.getJSONArray("result");
             JSONObject place = jsonArray.getJSONObject(0);
@@ -302,21 +350,21 @@ public class RecomendacionActivity extends AppCompatActivity {
             this.listaDB.addLast(lugarActual);
             //Toast.makeText(DetectFacesActivity.this, "Información del lugar lista", Toast.LENGTH_LONG).show();
         } catch(Exception e) {
-            Toast.makeText(DetectFacesActivity.this, e.getMessage(),Toast.LENGTH_LONG).show();
+            Toast.makeText(RecomendacionActivity.this, e.getMessage(),Toast.LENGTH_LONG).show();
         }
     }
     
     public void obtenerListaCercanos(JSONObject result) {
         try {
             JSONArray jsonArray = result.getJSONArray("results");  
-            for(int i = 0; i < jsonArray.lenght(); i++) {
-                InfoLugar lugarActual = new InfoLugar();
+            for(int i = 0; i < jsonArray.length(); i++) {
+                InfoPlace lugarActual = new InfoPlace();
                 
                 JSONObject place = jsonArray.getJSONObject(i);
-                lugarActual.setNombre(place.getString("name"));
+                lugarActual.setName(place.getString("name"));
                 
                 JSONObject geometry = place.getJSONObject("geometry").getJSONObject("location");
-                LatLng coordenadas = new LatLng(geometry.getDouble("latitude", geometry.getDouble("longitude"));
+                LatLng coordenadas = new LatLng(geometry.getDouble("latitude"), geometry.getDouble("longitude"));
                 lugarActual.setLatlng(coordenadas);
                                                 
                 lugarActual.setPlaceId(place.getString("place_id"));
@@ -326,20 +374,20 @@ public class RecomendacionActivity extends AppCompatActivity {
                                                 
             obtenerRecomendacionesDB();
         } catch(Exception e) {
-            Toast.makeText(RecomendacionActivity.this, "Error al obtener información de lugares cercanos", Toast.LENGHT.LONG).show();  
+            Toast.makeText(RecomendacionActivity.this, "Error al obtener información de lugares cercanos", Toast.LENGTH_LONG).show();
         }
     }
                                                 
     public void obtenerRecomendacionesDB() {
-        mFirebaseReference.child("Comments").addValueEventListener(new ValueEventListener() {
+        mFirebaseDatabaseReference.child("Comments").addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
                 if(dataSnapshot != null && dataSnapshot != null) {
                     try {
                         for(DataSnapshot comentarioSnap : dataSnapshot.getChildren()) {
                             Comments infoComentario = comentarioSnap.getValue(Comments.class);
-                            if(infoCommentario.getTipoUsuario().equals(this.userInfo.getTipo()) {
-                                if(!infoComentario.getUserId().equals(user.getUid()) {
+                            if(infoComentario.getTipoUsuario().equals(userInfo.getTipo())) {
+                                if(!infoComentario.getUserId().equals(user.getUid())) {
                                    obtenerDetallesLugar(infoComentario.getPlaceId());
                                 }    
                             }
@@ -347,9 +395,14 @@ public class RecomendacionActivity extends AppCompatActivity {
                                    
                         mostrarRecomendaciones();
                     } catch(Exception e) {
-                        Toast.makeText(RecomendacionActivity.this, "Error al obtener recomendaciones de la base de datos", Toast.LENGHT_LONG).show();   
+                        Toast.makeText(RecomendacionActivity.this, "Error al obtener recomendaciones de la base de datos", Toast.LENGTH_LONG).show();
                     }
                 }
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+                Toast.makeText(RecomendacionActivity.this, "Búsqueda de recomendaciones cancelada", Toast.LENGTH_LONG).show();
             }
         });
     }
@@ -361,7 +414,7 @@ public class RecomendacionActivity extends AppCompatActivity {
            InfoPlace actualPlace = (InfoPlace) this.listaCercanos.get(i);
            for(int j = 0; j < this.listaDB.size(); j++) {
                InfoPlace auxPlace = (InfoPlace) this.listaDB.get(j);
-               if(actualPlace.getPlaceId.equals(auxPlace.getPlaceId()) {
+               if(actualPlace.getPlaceId().equals(auxPlace.getPlaceId())) {
                    finalRecomendaciones.addLast(actualPlace);
                    Log.e("Recomendaciones_Finales", actualPlace.toString());
                    break;
@@ -390,7 +443,7 @@ public class RecomendacionActivity extends AppCompatActivity {
                 tipo = "museum";
                 break;
             case "Escuela":
-                tipo = "school"
+                tipo = "school";
                 break;
             case "Banco":
                 tipo = "bank";

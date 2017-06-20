@@ -54,7 +54,6 @@ public class InfoPlace {
     }
 
     public String getPlaceId() {
-
         return placeId;
     }
 

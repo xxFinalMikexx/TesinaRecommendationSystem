@@ -139,11 +139,15 @@ public class ComentarioActivity extends AppCompatActivity implements
     }
 
     public void tomarFoto(View v) {
-        Intent takePicture = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-        File archivoImagen = crearArchivoSalida();
-        uriImagen = Uri.fromFile(archivoImagen);
-        takePicture.putExtra(MediaStore.EXTRA_OUTPUT, uriImagen);
-        startActivityForResult(takePicture, REQUEST_IMAGE_CAPTURE);
+        try {
+            Intent takePicture = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+            File archivoImagen = crearArchivoSalida();
+            uriImagen = Uri.fromFile(archivoImagen);
+            takePicture.putExtra(MediaStore.EXTRA_OUTPUT, uriImagen);
+            startActivityForResult(takePicture, REQUEST_IMAGE_CAPTURE);
+        } catch(Exception e) {
+            Toast.makeText(getApplicationContext(), "Error al tomar foto" + e.getMessage(), Toast.LENGTH_LONG).show();
+        }
     }
 
     public void enviarAporte(View v) {

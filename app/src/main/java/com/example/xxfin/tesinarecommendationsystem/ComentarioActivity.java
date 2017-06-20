@@ -7,11 +7,16 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Matrix;
 import android.location.Location;
 import android.location.LocationManager;
+import android.media.ExifInterface;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Environment;
 import android.provider.MediaStore;
+import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
@@ -29,6 +34,8 @@ import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.auth.*;
@@ -38,10 +45,15 @@ import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationServices;
 
 import com.example.xxfin.tesinarecommendationsystem.Objects.Comments;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.OnProgressListener;
+import com.google.firebase.storage.StorageReference;
+import com.google.firebase.storage.UploadTask;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -61,6 +73,8 @@ public class ComentarioActivity extends AppCompatActivity implements
     private Uri uriImagen;
     private String email = "";
     private String userId = "";
+    private String lastimgdatetime;
+    private Bitmap photo;
 
     public GoogleApiClient mGoogleApiClient;
     public Location mLastLocation;
@@ -68,9 +82,13 @@ public class ComentarioActivity extends AppCompatActivity implements
     private DatabaseReference mDatabase;
     private DatabaseReference mFirebaseDatabaseReference;
 
+    private StorageReference mStorageRef;
+    private FirebaseStorage storage;
+
+    private Uri downloadUrl;
+
     /*Views and buttons*/
     private ImageView fotoUsuario;
-    private ProgressDialog prDialog;
     private Spinner spinGustar;
     private Spinner spinPrimera;
     private EditText editComentario;
@@ -81,6 +99,7 @@ public class ComentarioActivity extends AppCompatActivity implements
     private static final int REQUEST_IMAGE_CAPTURE = 1;
     private static final int REQUEST_MAP_RESULT = 2;
     private static final String API_KEY = "AIzaSyALTyezzge7Tz1HdQMfBrUyfkJMWdk_RCE";
+    private static final int RADIOUS_SEARCH = 5000;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -94,6 +113,9 @@ public class ComentarioActivity extends AppCompatActivity implements
         this.spinGustar = (Spinner) findViewById(R.id.spinGustar);
         this.spinPrimera = (Spinner) findViewById(R.id.spinPrimera);
         this.editComentario = (EditText) findViewById(R.id.editComentario);
+
+        this.storage = FirebaseStorage.getInstance();
+        this.mStorageRef = FirebaseStorage.getInstance().getReference();
         
         /*Revisa configuración de GPS*/
         if (!gpsEstaActivado()) {
@@ -133,21 +155,10 @@ public class ComentarioActivity extends AppCompatActivity implements
             Toast.makeText(getApplicationContext(), "La ubicación elegida no es válida. Intenta nuevamente", Toast.LENGTH_LONG).show();
             return;
         }
-        mDatabase = FirebaseDatabase.getInstance().getReference();
 
-        Comments comment = new Comments();
-        String key = mFirebaseDatabaseReference.child("Comments").push().getKey();
-        comment.setCommentId(key);
-        comment.setLikeVisit(this.spinGustar.getSelectedItem().toString());
-        comment.setFirstTime(this.spinPrimera.getSelectedItem().toString());
-        comment.setComments(this.editComentario.getText().toString());
-        comment.setPlaceId(obtenPlaceId());
-        comment.setPhotoRef(this.rutaImagen);
-        comment.setUserId(this.userId);
-
-        mDatabase.child("Comments").child(key).setValue(comment);
-
-        this.finish();
+        Bitmap bmp = decodeFile(this.rutaImagen);
+        String path[] = this.rutaImagen.split("/");
+        uploadImage(bmp, path[path.length - 1]);
     }
 
     /**
@@ -186,23 +197,14 @@ public class ComentarioActivity extends AppCompatActivity implements
         }
     }
 
-    public void obtenerCoordenadas() {
-        Location coordenadas = null;
-
-        LocationManager location = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-
-        this.latitud = coordenadas.getLatitude();
-        this.longitud = coordenadas.getLongitude();
-    }
 
     public String obtenPlaceId() {
-        String placeId = "";
         if(this.longitud != 0.0 && this.latitud != 0.0) {
             RequestQueue queue = Volley.newRequestQueue(this);
 
             StringBuilder googlePlacesUrl = new StringBuilder("http://maps.google.com/maps/api/geocode/json?");
             googlePlacesUrl.append("latlng=").append(latitud).append(",").append(longitud);
-            googlePlacesUrl.append("&radious=").append(5000);
+            googlePlacesUrl.append("&radious=").append(RADIOUS_SEARCH);
             googlePlacesUrl.append("&key=").append(API_KEY);
 
             JsonObjectRequest placeRequest = new JsonObjectRequest (
@@ -212,22 +214,76 @@ public class ComentarioActivity extends AppCompatActivity implements
                     new Response.Listener<JSONObject>() {
                         @Override
                         public void onResponse(JSONObject response) {
-                            //Toast.makeText(DetectFacesActivity.this, response.toString(), Toast.LENGTH_LONG).show();
-                            setPlaceId(response);
+                            getPlaceId(response);
                         }
                     }, new Response.ErrorListener() {
                 @Override
                 public void onErrorResponse(VolleyError error) {
-                    Toast.makeText(ComentarioActivity.this, error.toString(), Toast.LENGTH_LONG).show();
+                    Toast.makeText(ComentarioActivity.this, "No se pudieron obtener las coordenadas", Toast.LENGTH_LONG).show();
                 }
             }
             );
             queue.add(placeRequest);
+        } else {
+            Toast.makeText(getApplicationContext(), "No se pudieron obtener las coordenadas", Toast.LENGTH_LONG).show();
         }
         return this.placeId;
     }
 
-    public void setPlaceId(JSONObject result) {
+    public void uploadImage(Bitmap bitmap, String key) {
+        StorageReference storageRef = storage.getReferenceFromUrl("gs://tesinafinal-e025b.appspot.com");
+        StorageReference photoRef = storageRef.child("imagenes/" + key + ".jpg");
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 50, baos);
+        byte[] data = baos.toByteArray();
+
+        UploadTask uploadTask = photoRef.putBytes(data);
+        uploadTask.addOnProgressListener(new OnProgressListener<UploadTask.TaskSnapshot>() {
+            @Override
+            public void onProgress(UploadTask.TaskSnapshot taskSnapshot) {
+                double progress = (100.0 * taskSnapshot.getBytesTransferred()) / taskSnapshot.getTotalByteCount();
+                Log.e("Comentario Activity", "progress... " + progress + "%");
+            }
+        }).addOnFailureListener(new OnFailureListener() {
+            @Override
+            public void onFailure(@NonNull Exception exception) {
+                Toast.makeText(getApplicationContext(), "Error al cargar la imagen", Toast.LENGTH_LONG).show();
+            }
+        }).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+            @Override
+            public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+                getDownloadUrl(taskSnapshot);
+            }
+        });
+    }
+
+    public void getDownloadUrl(UploadTask.TaskSnapshot taskSnapshot) {
+        this.downloadUrl = taskSnapshot.getMetadata().getDownloadUrl();
+        cargarComentario();
+    }
+
+    public void cargarComentario() {
+        mDatabase = FirebaseDatabase.getInstance().getReference();
+
+        Comments comment = new Comments();
+        String key = mFirebaseDatabaseReference.child("Comments").push().getKey();
+        comment.setCommentId(key);
+        comment.setLikeVisit(this.spinGustar.getSelectedItem().toString());
+        comment.setFirstTime(this.spinPrimera.getSelectedItem().toString());
+        comment.setComments(this.editComentario.getText().toString());
+        comment.setPlaceId(obtenPlaceId());
+        comment.setPhotoRef(this.rutaImagen);
+        comment.setUserId(this.userId);
+
+        mDatabase.child("Comments").child(key).setValue(comment);
+
+        Intent mainIntent = new Intent(ComentarioActivity.this, MainActivity.class);
+        mainIntent.putExtra("success", 1);
+        this.finish();
+    }
+
+    public void getPlaceId(JSONObject result) {
         try {
             JSONArray jsonArray = result.getJSONArray("results");
             JSONObject place = jsonArray.getJSONObject(0);
@@ -358,18 +414,18 @@ public class ComentarioActivity extends AppCompatActivity implements
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == RESULT_OK) {
-            Uri imagenSeleccionada = data.getData();
-            this.rutaImagen = obtenerRutaRealUri(imagenSeleccionada);
+            try {
+                Uri imagenSeleccionada = data.getData();
+                this.rutaImagen = obtenerRutaRealUri(imagenSeleccionada);
+                this.photo = (Bitmap) data.getExtras().get("data");
+                if (this.longitud != 0.0 && this.latitud != 0.0) {
+                    this.fotoUsuario.setImageBitmap(this.photo);
 
-            if (this.longitud != 0.0 && this.latitud != 0.0) {
-                /*Forma alternativa para cargar la imagen en caso de que no funcione*/
-                Bitmap bmp = decodeFile(this.rutaImagen);
-                this.fotoUsuario.setImageBitmap(bmp);
-                prDialog = new ProgressDialog(this);
-                prDialog.setCancelable(false);
-
-            } else {
-                //TODO error
+                } else {
+                    //TODO error
+                }
+            } catch(Exception e) {
+                Toast.makeText(getApplicationContext(), "Error al obtener la foto.", Toast.LENGTH_LONG).show();
             }
         }
 

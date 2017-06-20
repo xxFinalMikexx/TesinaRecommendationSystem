@@ -41,7 +41,7 @@
                     android:layout_marginLeft="5dp"
                     android:layout_marginRight="10dp"
                     android:gravity="center_horizontal"
-                    android:text="Rango de búsqueda (mts)"
+                    android:text="Rango de búsqueda"
                     android:textSize="15dp" />
 
                 <Spinner

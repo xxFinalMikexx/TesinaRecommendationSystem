@@ -3,6 +3,7 @@ package com.example.xxfin.tesinarecommendationsystem;
 import android.location.Location;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Spinner;
 
@@ -49,13 +50,13 @@ public class RecomendacionActivity extends AppCompatActivity {
         /*Crea cliente de para la localización*/
         crearClienteLocalizacion();
 
-        Spinner generoSpin = (Spinner) findViewById(R.id.genero);
-        Spinner edadesSpin = (Spinner) findViewById(R.id.rangoEdad);
+        Spinner tipoSpin = (Spinner) findViewById(R.id.spinFiltro);
+        Spinner rangoSpin = (Spinner) findViewById(R.id.spinRango);
 
         ArrayAdapter<String> generoAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_dropdown_item, this.tipoLista);
         ArrayAdapter<String> edadedAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_dropdown_item, this.rangoLista);
-        generoSpin.setAdapter(generoAdapter);
-        edadesSpin.setAdapter(edadedAdapter);
+        tipoSpin.setAdapter(generoAdapter);
+        rangoSpin.setAdapter(edadedAdapter);
     }
 
     public synchronized void crearClienteLocalizacion() {
@@ -72,5 +73,9 @@ public class RecomendacionActivity extends AppCompatActivity {
         }
     }
 
-    
+    public void buscarRecomendacion(View v) {
+
+    }
+
+
 }

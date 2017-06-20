@@ -1,5 +1,6 @@
 package com.example.xxfin.tesinarecommendationsystem;
 
+import android.app.ProgressDialog;
 import android.content.Intent;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -16,6 +17,8 @@ public class MainActivity extends AppCompatActivity {
     private String email = "";
     private String userId = "";
 
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -31,6 +34,7 @@ public class MainActivity extends AppCompatActivity {
         aporteIntent.putExtra("email", this.email);
         aporteIntent.putExtra("userId", this.userId);
         this.startActivity(aporteIntent);
+        this.finish();
     }
 
     public void buscarRecomendacion(View v) {
@@ -38,5 +42,6 @@ public class MainActivity extends AppCompatActivity {
         recomendacionIntent.putExtra("email", this.email);
         recomendacionIntent.putExtra("userId", this.userId);
         this.startActivity(recomendacionIntent);
+        this.finish();
     }
 }

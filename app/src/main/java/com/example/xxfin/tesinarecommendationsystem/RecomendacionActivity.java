@@ -34,6 +34,7 @@ public class RecomendacionActivity extends AppCompatActivity {
     private double longitud = 0; // Variable para guardar longitud
     private Users userInfo;
     private LinkedList listaCercanos = new LinkedList();
+    private LinkedList listaDB = new LinkedList();
 
     public GoogleApiClient mGoogleApiClient;
     public Location mLastLocation;
@@ -283,21 +284,23 @@ public class RecomendacionActivity extends AppCompatActivity {
     
     public void obtenerInfoLugar(JSONObject result) {
         try {
+            InfoLugar lugarActual = new InfoLugar();
+            
             JSONArray jsonArray = result.getJSONArray("result");
             JSONObject place = jsonArray.getJSONObject(0);
 
-            this.placeInfo.setName(place.getString("name"));
-            this.placeInfo.setPlaceId(place.getString("place_id"));
+            lugarActual.setName(place.getString("name"));
+            lugarActual.setPlaceId(place.getString("place_id"));
 
             JSONObject geometry = place.getJSONObject("geometry").getJSONObject("location");
             LatLng coordinates = new LatLng(geometry.getDouble("latitude"), geometry.getDouble("longitude"));
-            this.placeInfo.setLatlng(coordinates);
+            lugarActual.setLatlng(coordinates);
+            
+            lugarActual.setPlaceTypes(place.getJSONArray("types"));
+            lugarActual.setRating(place.getDouble("rating"));
 
-            this.placeInfo.setPlaceTypes(place.getJSONArray("types"));
-
-            this.placeInfo.setRating(place.getDouble("rating"));
-
-            Toast.makeText(DetectFacesActivity.this, "Información del lugar lista", Toast.LENGTH_LONG).show();
+            this.listaDB.addLast(lugarActual);
+            //Toast.makeText(DetectFacesActivity.this, "Información del lugar lista", Toast.LENGTH_LONG).show();
         } catch(Exception e) {
             Toast.makeText(DetectFacesActivity.this, e.getMessage(),Toast.LENGTH_LONG).show();
         }
@@ -341,6 +344,8 @@ public class RecomendacionActivity extends AppCompatActivity {
                                 }    
                             }
                         }
+                                   
+                        mostrarRecomendaciones();
                     } catch(Exception e) {
                         Toast.makeText(RecomendacionActivity.this, "Error al obtener recomendaciones de la base de datos", Toast.LENGHT_LONG).show();   
                     }
@@ -348,6 +353,22 @@ public class RecomendacionActivity extends AppCompatActivity {
             }
         });
     }
+                               
+   public void mostrarRecomendaciones() {
+       LinkedList finalRecomendaciones = new LinkedList();
+       
+       for(int i = 0; i < this.listaCercanos.size(); i++) {
+           InfoPlace actualPlace = (InfoPlace) this.listaCercanos.get(i);
+           for(int j = 0; j < this.listaDB.size(); j++) {
+               InfoPlace auxPlace = (InfoPlace) this.listaDB.get(j);
+               if(actualPlace.getPlaceId.equals(auxPlace.getPlaceId()) {
+                   finalRecomendaciones.addLast(actualPlace);
+                   Log.e("Recomendaciones_Finales", actualPlace.toString());
+                   break;
+               }
+           }
+       }
+   }
     
     public String getTipoLugar(String tipoLugar) {
         String tipo = "";

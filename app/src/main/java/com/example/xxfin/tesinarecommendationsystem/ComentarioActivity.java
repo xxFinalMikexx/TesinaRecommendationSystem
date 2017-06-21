@@ -1,5 +1,7 @@
 package com.example.xxfin.tesinarecommendationsystem;
 
+import android.*;
+import android.Manifest;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -18,11 +20,13 @@ import android.os.Environment;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.Spinner;
@@ -75,6 +79,8 @@ public class ComentarioActivity extends AppCompatActivity implements
     private String userId = "";
     private String lastimgdatetime;
     private Bitmap photo;
+    private String gustarList[] = {"Si", "No"};
+    private String primeraList[] = {"Si", "No"};
 
     public GoogleApiClient mGoogleApiClient;
     public Location mLastLocation;
@@ -100,6 +106,7 @@ public class ComentarioActivity extends AppCompatActivity implements
     private static final int REQUEST_MAP_RESULT = 2;
     private static final String API_KEY = "AIzaSyALTyezzge7Tz1HdQMfBrUyfkJMWdk_RCE";
     private static final int RADIOUS_SEARCH = 5000;
+    private static final int REQUEST_WRITE_EXTERNAL_STORAGE = 1001;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -114,6 +121,11 @@ public class ComentarioActivity extends AppCompatActivity implements
         this.spinPrimera = (Spinner) findViewById(R.id.spinPrimera);
         this.editComentario = (EditText) findViewById(R.id.editComentario);
 
+        ArrayAdapter<String> gustarAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_dropdown_item, this.gustarList);
+        ArrayAdapter<String> primeraAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_dropdown_item, this.primeraList);
+        this.spinGustar.setAdapter(gustarAdapter);
+        this.spinPrimera.setAdapter(primeraAdapter);
+
         this.storage = FirebaseStorage.getInstance();
         this.mStorageRef = FirebaseStorage.getInstance().getReference();
         
@@ -122,12 +134,22 @@ public class ComentarioActivity extends AppCompatActivity implements
             solicitarActivacionGPS();
         }
 
+        revisarPermisos();
+
         Bundle extras = getIntent().getExtras();
         this.email = (String) extras.get("email");
         this.userId = (String) extras.get("userId");
         
         /*Crea cliente de para la localización*/
         crearClienteLocalizacion();
+    }
+
+    public void revisarPermisos() {
+        if (ContextCompat.checkSelfPermission(ComentarioActivity.this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(ComentarioActivity.this,
+                    new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},
+                    REQUEST_WRITE_EXTERNAL_STORAGE);
+        }
     }
 
     @Override
@@ -147,6 +169,8 @@ public class ComentarioActivity extends AppCompatActivity implements
             startActivityForResult(takePicture, REQUEST_IMAGE_CAPTURE);
         } catch(Exception e) {
             Toast.makeText(getApplicationContext(), "Error al tomar foto" + e.getMessage(), Toast.LENGTH_LONG).show();
+            Log.e("Error en foto", e.getLocalizedMessage());
+            e.printStackTrace();
         }
     }
 
@@ -173,10 +197,11 @@ public class ComentarioActivity extends AppCompatActivity implements
     protected File crearArchivoSalida() {
         File mediaStorageDir = new File(Environment.getExternalStoragePublicDirectory(
                 Environment.DIRECTORY_PICTURES), "Recommendation_System");
-
+        Log.e("MediaStorage", mediaStorageDir.exists() + "");
         // Create the storage directory if it does not exist
         if (!mediaStorageDir.exists()) {
             if (!mediaStorageDir.mkdirs()) {
+                Log.e("Error mkdir", mediaStorageDir.getAbsolutePath());
                 return null;
             }
         }
@@ -435,6 +460,30 @@ public class ComentarioActivity extends AppCompatActivity implements
 
         if(requestCode == REQUEST_MAP_RESULT && resultCode == RESULT_OK) {
             this.placeId = data.getStringExtra("place_id");
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode,
+                                           String permissions[], int[] grantResults) {
+        switch (requestCode) {
+            case REQUEST_WRITE_EXTERNAL_STORAGE: {
+                // If request is cancelled, the result arrays are empty.
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    Toast.makeText(getApplicationContext(), "Permisos de escritura concedidos", Toast.LENGTH_LONG).show();
+                    // permission was granted, yay! Do the
+                    // contacts-related task you need to do.
+
+                } else {
+
+                    // permission denied, boo! Disable the
+                    // functionality that depends on this permission.
+                }
+                return;
+            }
+
+            // other 'case' lines to check for other
+            // permissions this app might request
         }
     }
 }

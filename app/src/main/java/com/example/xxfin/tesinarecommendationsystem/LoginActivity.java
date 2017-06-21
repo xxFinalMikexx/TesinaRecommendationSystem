@@ -112,7 +112,7 @@ public class LoginActivity extends AppCompatActivity {
                                 Users userObj = userSnap.getValue(Users.class);
                                 if(userObj.getUserId().equals(user.getUid())) {
                                     Log.e("Usuario!!",user.getUid());
-                                /*User has already answered the questions. Go directly to */
+                                    /*User has already answered the questions. Go directly to */
                                     Intent mainIntent = new Intent(LoginActivity.this, MainActivity.class);
                                     mainIntent.putExtra("email", user.getEmail());
                                     mainIntent.putExtra("userId", user.getUid());

@@ -73,6 +73,7 @@ public class RecomendacionActivity extends AppCompatActivity implements
 
     /*Static code of result*/
     private static final String API_KEY = "AIzaSyALTyezzge7Tz1HdQMfBrUyfkJMWdk_RCE";
+    private static final int REQUEST_ACCESS_FINE_LOCATION = 10002;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -183,13 +184,9 @@ public class RecomendacionActivity extends AppCompatActivity implements
     @Override
     public void onConnected(Bundle connectionHint) {
         if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            // TODO: Consider calling
-            //    ActivityCompat#requestPermissions
-            // here to request the missing permissions, and then overriding
-            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-            //                                          int[] grantResults)
-            // to handle the case where the user grants the permission. See the documentation
-            // for ActivityCompat#requestPermissions for more details.
+            ActivityCompat.requestPermissions(ComentarioActivity.this,
+                    new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
+                    REQUEST_ACCESS_FINE_LOCATION);
             return;
         }
         mLastLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient); // Obtiene la última localización conocida del dispositivo
@@ -501,5 +498,18 @@ public class RecomendacionActivity extends AppCompatActivity implements
                 break;
         }
         return rango;
+    }
+        
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) {
+        switch(requestCode) {
+                case REQUEST_ACCESS_FINE_LOCATION: {
+                    if(grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                        Toast.makeText(getApplicationContext(), "Permisos de ubicación concedidos", Toast.LENGTH_LONG).show();        
+                    }
+                    return;
+                }
+                    
+        }
     }
 }

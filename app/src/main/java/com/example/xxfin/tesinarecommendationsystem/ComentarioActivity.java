@@ -21,6 +21,7 @@ import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
+import android.support.v4.content.FileProvider;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -59,6 +60,7 @@ import org.json.JSONObject;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
@@ -128,6 +130,7 @@ public class ComentarioActivity extends AppCompatActivity implements
 
         this.storage = FirebaseStorage.getInstance();
         this.mStorageRef = FirebaseStorage.getInstance().getReference();
+        this.mFirebaseDatabaseReference = FirebaseDatabase.getInstance().getReference();
         
         /*Revisa configuración de GPS*/
         if (!gpsEstaActivado()) {
@@ -161,16 +164,9 @@ public class ComentarioActivity extends AppCompatActivity implements
     }
 
     public void tomarFoto(View v) {
-        try {
-            Intent takePicture = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-            File archivoImagen = crearArchivoSalida();
-            uriImagen = Uri.fromFile(archivoImagen);
-            takePicture.putExtra(MediaStore.EXTRA_OUTPUT, uriImagen);
-            startActivityForResult(takePicture, REQUEST_IMAGE_CAPTURE);
-        } catch(Exception e) {
-            Toast.makeText(getApplicationContext(), "Error al tomar foto" + e.getMessage(), Toast.LENGTH_LONG).show();
-            Log.e("Error en foto", e.getLocalizedMessage());
-            e.printStackTrace();
+        Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+        if (takePictureIntent.resolveActivity(getPackageManager()) != null) {
+            startActivityForResult(takePictureIntent, REQUEST_IMAGE_CAPTURE);
         }
     }
 
@@ -184,35 +180,14 @@ public class ComentarioActivity extends AppCompatActivity implements
             return;
         }
 
-        Bitmap bmp = decodeFile(this.rutaImagen);
-        String path[] = this.rutaImagen.split("/");
-        uploadImage(bmp, path[path.length - 1]);
-    }
-
-    /**
-     * Metodo que crea un archivo de imagen vacio donde se va a guardar la foto capturada
-     *
-     * @return archivo creado
-     */
-    protected File crearArchivoSalida() {
-        File mediaStorageDir = new File(Environment.getExternalStoragePublicDirectory(
-                Environment.DIRECTORY_PICTURES), "Recommendation_System");
-        Log.e("MediaStorage", mediaStorageDir.exists() + "");
-        // Create the storage directory if it does not exist
-        if (!mediaStorageDir.exists()) {
-            if (!mediaStorageDir.mkdirs()) {
-                Log.e("Error mkdir", mediaStorageDir.getAbsolutePath());
-                return null;
-            }
+        try {
+            Bitmap bmp = this.imageBitmap;
+            String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
+            String imageFileName = "JPEG_" + timeStamp + ".jpg";
+            uploadImage(bmp, imageFileName);
+        } catch(Exception e) {
+            Log.e("Bitmap Upload", e.getMessage());
         }
-
-        // Create a media file name
-        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
-        File mediaFile;
-
-        mediaFile = new File(mediaStorageDir.getPath() + File.separator +
-                "IMG_" + timeStamp + ".jpg");
-        return mediaFile;
     }
 
     /**
@@ -261,7 +236,7 @@ public class ComentarioActivity extends AppCompatActivity implements
 
     public void uploadImage(Bitmap bitmap, String key) {
         StorageReference storageRef = storage.getReferenceFromUrl("gs://tesinafinal-e025b.appspot.com");
-        StorageReference photoRef = storageRef.child("imagenes/" + key + ".jpg");
+        StorageReference photoRef = storageRef.child("imagenes/" + key);
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         bitmap.compress(Bitmap.CompressFormat.JPEG, 50, baos);
@@ -293,10 +268,8 @@ public class ComentarioActivity extends AppCompatActivity implements
     }
 
     public void cargarComentario() {
-        mDatabase = FirebaseDatabase.getInstance().getReference();
-
         Comments comment = new Comments();
-        String key = mFirebaseDatabaseReference.child("Comments").push().getKey();
+        String key = this.mFirebaseDatabaseReference.child("Comments").push().getKey();
         comment.setCommentId(key);
         comment.setLikeVisit(this.spinGustar.getSelectedItem().toString());
         comment.setFirstTime(this.spinPrimera.getSelectedItem().toString());
@@ -305,9 +278,9 @@ public class ComentarioActivity extends AppCompatActivity implements
         comment.setPhotoRef(this.rutaImagen);
         comment.setUserId(this.userId);
 
-        mDatabase.child("Comments").child(key).setValue(comment);
+        this.mFirebaseDatabaseReference.child("Comments").child(key).setValue(comment);
 
-        Intent mainIntent = new Intent(ComentarioActivity.this, MainActivity.class);
+        Intent mainIntent = new Intent(ComentarioActivity.this, ConfirmActivity.class);
         mainIntent.putExtra("success", 1);
         this.finish();
     }
@@ -434,32 +407,25 @@ public class ComentarioActivity extends AppCompatActivity implements
             Cursor cursor = getContentResolver().query(imagenSeleccionada, informacion_imagen, null, null, null); // Buscar la imagen que coincide con el Uri dado
             int column_index = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA);  // Buscar la columna de url de imagen
             cursor.moveToFirst(); // Ir al primer elemento
+            Log.e("Cursor en orden...", cursor.getString(column_index));
             return cursor.getString(column_index); // Regresar ruta real
         } catch (Exception e) {
+            Log.e("Obtener ruta error", e.getMessage());
             return imagenSeleccionada.getPath(); // Regresar ruta decodificada
         }
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == RESULT_OK) {
-            try {
-                Uri imagenSeleccionada = data.getData();
-                this.rutaImagen = obtenerRutaRealUri(imagenSeleccionada);
-                this.photo = (Bitmap) data.getExtras().get("data");
-                if (this.longitud != 0.0 && this.latitud != 0.0) {
-                    this.fotoUsuario.setImageBitmap(this.photo);
-
-                } else {
-                    //TODO error
-                }
-            } catch(Exception e) {
-                Toast.makeText(getApplicationContext(), "Error al obtener la foto.", Toast.LENGTH_LONG).show();
-            }
-        }
-
-        if(requestCode == REQUEST_MAP_RESULT && resultCode == RESULT_OK) {
+            Bundle extras = data.getExtras();
+            this.imageBitmap = (Bitmap) extras.get("data");
+            this.fotoUsuario.setImageBitmap(this.imageBitmap);
+        } else if(requestCode == REQUEST_MAP_RESULT && resultCode == RESULT_OK) {
             this.placeId = data.getStringExtra("place_id");
+        } else {
+            Log.e("Imagen no seleccionada", "Error de data");
         }
     }
 

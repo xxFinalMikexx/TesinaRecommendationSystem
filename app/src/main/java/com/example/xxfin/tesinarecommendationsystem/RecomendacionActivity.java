@@ -16,6 +16,7 @@ import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.CheckBox;
 import android.widget.GridLayout;
+import android.widget.GridView;
 import android.widget.Spinner;
 import android.widget.Toast;
 
@@ -44,7 +45,9 @@ import com.google.firebase.database.ValueEventListener;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
+import java.util.List;
 
 public class RecomendacionActivity extends AppCompatActivity implements
         GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
@@ -52,7 +55,7 @@ public class RecomendacionActivity extends AppCompatActivity implements
     /*Local Variables*/
     private String email = "";
     private String userId = "";
-    private String tipoLista[] = {"Hospital", "Library", "Bar", "Cafe", "Museo", "Escuela", "Banco", "Restaurante", "Tienda", "Alojamiento"};
+    private String tipoLista[] = {"Hospital", "Librería", "Bar", "Café", "Museo", "Escuela", "Banco", "Restaurante", "Tienda", "Alojamiento"};
     private String rangoLista[] = {"0.5km", "1km", "1.5kms", "2kms", "2.5kms", "3kms", "3.5kms", "4kms", "4.5kms", "5kms"};
     private double latitud = 0; // Variable para guardar latitud
     private double longitud = 0; // Variable para guardar longitud
@@ -64,6 +67,7 @@ public class RecomendacionActivity extends AppCompatActivity implements
     private CheckBox generoBox;
     private CheckBox edadBox;
     private GridLayout gridMain;
+    private GridView gridPopulate;
     private String tipoLugar = "";
     private String rangoBusqueda = "";
 
@@ -140,6 +144,7 @@ public class RecomendacionActivity extends AppCompatActivity implements
         this.generoBox = (CheckBox) findViewById(R.id.checkGenero);
         this.edadBox = (CheckBox) findViewById(R.id.checkEdad);
         this.gridMain = (GridLayout) findViewById(R.id.gridRecomendaciones);
+        this.gridPopulate = (GridView) findViewById(R.id.gridPopulate);
 
         ArrayAdapter<String> generoAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_dropdown_item, this.tipoLista);
         ArrayAdapter<String> edadedAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_dropdown_item, this.rangoLista);
@@ -445,12 +450,19 @@ public class RecomendacionActivity extends AppCompatActivity implements
                                
    public void mostrarRecomendaciones() {
        LinkedList finalRecomendaciones = new LinkedList();
+       List<String> listaRecomendaciones = new ArrayList<String>();
 
        if(this.listaDB.isEmpty()) {
-           for (int i = 0; i < this.listaCercanos.size(); i++) {
+           //this.listaCercanos.size()
+           for (int i = 0; i < 5; i++) {
                InfoPlace actualPlace = (InfoPlace) this.listaCercanos.get(i);
-               Log.e("Recomendaciones_Finales", actualPlace.getPlaceId());
+               //Log.e("Recomendaciones_Finales", actualPlace.getPlaceId());
+               listaRecomendaciones.add(actualPlace.getName() + "");
+               Log.e("Lugares: ", actualPlace.getName() + "");
            }
+
+           ArrayAdapter<String> recomendacionesAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, listaRecomendaciones);
+           this.gridPopulate.setAdapter(recomendacionesAdapter);
        } else {
            for (int i = 0; i < this.listaCercanos.size(); i++) {
                InfoPlace actualPlace = (InfoPlace) this.listaCercanos.get(i);
@@ -469,41 +481,47 @@ public class RecomendacionActivity extends AppCompatActivity implements
     public String getTipoLugar(String tipoLugar) {
         String tipo = "";
         //"Hospital", "Librería", "Bar", "Café", "Museo", "Escuela", "Banco", "Restaurante", "Tienda", "Alojamiento"
-        switch(tipoLugar) {
-            case "Hospital":
-                tipo = "hospital";
-                break;
-            case "Librería":
-                tipo = "library";
-                break;
-            case "Bar":
-                tipo = "bar";
-                break;
-            case "Café":
-                tipo = "cafe";
-                break;
-            case "Museo":
-                tipo = "museum";
-                break;
-            case "Escuela":
-                tipo = "school";
-                break;
-            case "Banco":
-                tipo = "bank";
-                break;
-            case "Restaurante":
-                tipo = "restaurant";
-                break;
-            case "Tienda":
-                tipo = "store";
-                break;
-            case "Alojamiento":
-                tipo = "lodging";
-                break;
-            default:
-                tipo = "";
-                break;
+        try {
+            Log.e("Tipo lugar", tipoLugar);
+            switch (tipoLugar) {
+                case "Hospital":
+                    tipo = "hospital";
+                    break;
+                case "Librería":
+                    tipo = "library";
+                    break;
+                case "Bar":
+                    tipo = "bar";
+                    break;
+                case "Café":
+                    tipo = "cafe";
+                    break;
+                case "Museo":
+                    tipo = "museum";
+                    break;
+                case "Escuela":
+                    tipo = "school";
+                    break;
+                case "Banco":
+                    tipo = "bank";
+                    break;
+                case "Restaurante":
+                    tipo = "restaurant";
+                    break;
+                case "Tienda":
+                    tipo = "store";
+                    break;
+                case "Alojamiento":
+                    tipo = "lodging";
+                    break;
+                default:
+                    tipo = "";
+                    break;
+            }
+        } catch(Exception e) {
+            Log.e("Error tipo", e.getMessage());
         }
+        Log.e("Tipo de lugar", tipo);
         return tipo;
     }
     

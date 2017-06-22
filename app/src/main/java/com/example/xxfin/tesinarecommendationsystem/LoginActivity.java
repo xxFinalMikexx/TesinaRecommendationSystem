@@ -116,6 +116,9 @@ public class LoginActivity extends AppCompatActivity {
                                     Intent mainIntent = new Intent(LoginActivity.this, MainActivity.class);
                                     mainIntent.putExtra("email", user.getEmail());
                                     mainIntent.putExtra("userId", user.getUid());
+                                    mainIntent.putExtra("userType", userObj.getTipo());
+                                    mainIntent.putExtra("genero", userObj.getGenero());
+                                    mainIntent.putExtra("edad", userObj.getRangoEdad());
                                     startActivity(mainIntent);
                                     finish();
                                     break;

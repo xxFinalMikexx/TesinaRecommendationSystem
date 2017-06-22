@@ -14,6 +14,8 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.ArrayAdapter;
+import android.widget.CheckBox;
+import android.widget.GridLayout;
 import android.widget.Spinner;
 import android.widget.Toast;
 
@@ -59,6 +61,9 @@ public class RecomendacionActivity extends AppCompatActivity implements
     private LinkedList listaDB = new LinkedList();
     private Spinner tipoSpin;
     private Spinner rangoSpin;
+    private CheckBox generoBox;
+    private CheckBox edadBox;
+    private GridLayout gridMain;
     private String tipoLugar = "";
     private String rangoBusqueda = "";
 
@@ -96,14 +101,15 @@ public class RecomendacionActivity extends AppCompatActivity implements
         mFirebaseDatabaseReference = FirebaseDatabase.getInstance().getReference();
         user = mAuth.getCurrentUser();
 
-        mFirebaseDatabaseReference.child("users").addValueEventListener(new ValueEventListener() {
+        mFirebaseDatabaseReference.child("Users").addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
-
+                Toast.makeText(getApplicationContext(), "User DataSnapshot", Toast.LENGTH_LONG).show();
                 try {
                     for (DataSnapshot userSnap : dataSnapshot.getChildren()) {
                         Users userObj = userSnap.getValue(Users.class);
-                        if (userObj.getUserId().equals(user.getUid())) {
+                        Log.e("User Snapshot: ", userId + "\n" + userObj.getUserId());
+                        if (userObj.getUserId().equals(userId)) {
                             String userId = userObj.getUserId();
                             String userNombre = userObj.getNombre();
                             String userGenero = userObj.getGenero();
@@ -131,6 +137,9 @@ public class RecomendacionActivity extends AppCompatActivity implements
 
         this.tipoSpin = (Spinner) findViewById(R.id.spinFiltro);
         this.rangoSpin = (Spinner) findViewById(R.id.spinRango);
+        this.generoBox = (CheckBox) findViewById(R.id.checkGenero);
+        this.edadBox = (CheckBox) findViewById(R.id.checkEdad);
+        this.gridMain = (GridLayout) findViewById(R.id.gridRecomendaciones);
 
         ArrayAdapter<String> generoAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_dropdown_item, this.tipoLista);
         ArrayAdapter<String> edadedAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_dropdown_item, this.rangoLista);
@@ -152,7 +161,9 @@ public class RecomendacionActivity extends AppCompatActivity implements
     }
 
     public void fillUserInformation(String userId, String nombre, String genero, int rangoEdad, int tipo, String email) {
+        Toast.makeText(getApplicationContext(), "Fill user info not null", Toast.LENGTH_LONG).show();
         this.userInfo = new Users(userId, nombre, genero, rangoEdad, tipo, email);
+        Log.e("User info", "User info not null");
     }
 
     /**
@@ -262,38 +273,52 @@ public class RecomendacionActivity extends AppCompatActivity implements
     }
 
     public void buscarRecomendacion(View v) {
-        String tipoLugar = this.tipoSpin.getSelectedItem().toString();
-        String rangoBusqueda = this.rangoSpin.getSelectedItem().toString();
+        //this.gridMain.setVisibility(View.INVISIBLE);
+        try {
+            String tipoLugar = this.tipoSpin.getSelectedItem().toString();
+            String rangoBusqueda = this.rangoSpin.getSelectedItem().toString();
+            boolean generoSelected = this.generoBox.isSelected();
+            boolean edadSelected = this.edadBox.isSelected();
+            String genero = this.userInfo.getGenero();
+            int edad = this.userInfo.getRangoEdad();
+        } catch(Exception e) {
+            Log.e("Recomendación error", e.getMessage());
+        }
         
         this.tipoLugar = getTipoLugar(tipoLugar);
         this.rangoBusqueda = getRangoBusqueda(rangoBusqueda);
+
+        obtenerResultadosSimilares(this.tipoLugar, this.rangoBusqueda);
     }
     
     public void obtenerDetallesLugar(String placeId) {
         RequestQueue queue = Volley.newRequestQueue(this);
+        try {
+            StringBuilder googlePlacesUrl = new StringBuilder("https://maps.googleapis.com/maps/api/place/details/json?");
+            //placeid=ChIJN1t_tDeuEmsRUsoyG83frY4&key=AIzaSyALTyezzge7Tz1HdQMfBrUyfkJMWdk_RCE
+            googlePlacesUrl.append("placeid=").append(placeId);
+            googlePlacesUrl.append("&key=").append(API_KEY);
 
-        StringBuilder googlePlacesUrl = new StringBuilder("https://maps.googleapis.com/maps/api/place/details/json?");
-        //placeid=ChIJN1t_tDeuEmsRUsoyG83frY4&key=AIzaSyALTyezzge7Tz1HdQMfBrUyfkJMWdk_RCE
-        googlePlacesUrl.append("placeid=").append(placeId);
-        googlePlacesUrl.append("&key=").append(API_KEY);
-
-        final JsonObjectRequest placeRequest = new JsonObjectRequest (
-                Request.Method.GET,
-                googlePlacesUrl.toString(),
-                null,
-                new Response.Listener<JSONObject>() {
-                    @Override
-                    public void onResponse(JSONObject response) {
-                        //Toast.makeText(DetectFacesActivity.this, response.toString(), Toast.LENGTH_LONG).show();
-                        obtenerInfoLugar(response);
-                    }
-                }, new Response.ErrorListener() {
-            @Override
-            public void onErrorResponse(VolleyError error) {
-                Toast.makeText(RecomendacionActivity.this, error.toString(), Toast.LENGTH_LONG).show();
-            }
-        });
-        queue.add(placeRequest);
+            final JsonObjectRequest placeRequest = new JsonObjectRequest(
+                    Request.Method.GET,
+                    googlePlacesUrl.toString(),
+                    null,
+                    new Response.Listener<JSONObject>() {
+                        @Override
+                        public void onResponse(JSONObject response) {
+                            //Toast.makeText(DetectFacesActivity.this, response.toString(), Toast.LENGTH_LONG).show();
+                            obtenerInfoLugar(response);
+                        }
+                    }, new Response.ErrorListener() {
+                @Override
+                public void onErrorResponse(VolleyError error) {
+                    Toast.makeText(RecomendacionActivity.this, error.toString(), Toast.LENGTH_LONG).show();
+                }
+            });
+            queue.add(placeRequest);
+        } catch(Exception e) {
+            Log.e("DETALLES LUGAR", e.getMessage());
+        }
     }
     
      public void obtenerResultadosSimilares(String tipo, String rango) {
@@ -302,10 +327,10 @@ public class RecomendacionActivity extends AppCompatActivity implements
             StringBuilder googlePlacesUrl = new StringBuilder("https://maps.googleapis.com/maps/api/place/nearbysearch/json?");
             //location=51.503186,-0.126446&radius=5000&types=hospital&key=AIzaSyALTyezzge7Tz1HdQMfBrUyfkJMWdk_RCE
             googlePlacesUrl.append("location=").append(this.latitud).append(",").append(this.longitud);
-            googlePlacesUrl.append("&radious=").append(rango);
+            googlePlacesUrl.append("&radius=").append(rango);
             googlePlacesUrl.append("&type=").append(tipo);
             googlePlacesUrl.append("&key=").append(API_KEY);
-
+            Log.e("Query Similares", googlePlacesUrl.toString());
             final JsonObjectRequest detailsRequest = new JsonObjectRequest(
                     Request.Method.GET,
                     googlePlacesUrl.toString(),
@@ -314,6 +339,7 @@ public class RecomendacionActivity extends AppCompatActivity implements
                         @Override
                         public void onResponse(JSONObject response) {
                             //Toast.makeText(DetectFacesActivity.this, response.toString(), Toast.LENGTH_LONG).show();
+                            Log.e("ResponseSimilares", "...");
                             obtenerListaCercanos(response);
                         }
                     }, new Response.ErrorListener() {
@@ -324,6 +350,7 @@ public class RecomendacionActivity extends AppCompatActivity implements
             });
             queue.add(detailsRequest);
         } catch(Exception e) {
+            Log.e("NearbySearch: ", e.getMessage());
             Toast.makeText(RecomendacionActivity.this, "Error en string NearbySearch", Toast.LENGTH_LONG).show();
         }
     }
@@ -346,8 +373,10 @@ public class RecomendacionActivity extends AppCompatActivity implements
             lugarActual.setRating(place.getDouble("rating"));
 
             this.listaDB.addLast(lugarActual);
+            Log.e("Place added", lugarActual.getPlaceId());
             //Toast.makeText(DetectFacesActivity.this, "Información del lugar lista", Toast.LENGTH_LONG).show();
         } catch(Exception e) {
+            Log.e("InfoLugar", e.getMessage());
             Toast.makeText(RecomendacionActivity.this, e.getMessage(),Toast.LENGTH_LONG).show();
         }
     }
@@ -362,16 +391,17 @@ public class RecomendacionActivity extends AppCompatActivity implements
                 lugarActual.setName(place.getString("name"));
                 
                 JSONObject geometry = place.getJSONObject("geometry").getJSONObject("location");
-                LatLng coordenadas = new LatLng(geometry.getDouble("latitude"), geometry.getDouble("longitude"));
+                LatLng coordenadas = new LatLng(geometry.getDouble("lat"), geometry.getDouble("lng"));
                 lugarActual.setLatlng(coordenadas);
                                                 
                 lugarActual.setPlaceId(place.getString("place_id"));
-                
+
                 this.listaCercanos.addLast(lugarActual);
             }
                                                 
             obtenerRecomendacionesDB();
         } catch(Exception e) {
+            Log.e("Lista Cercanos", "Error " + e.getMessage());
             Toast.makeText(RecomendacionActivity.this, "Error al obtener información de lugares cercanos", Toast.LENGTH_LONG).show();
         }
     }
@@ -380,21 +410,29 @@ public class RecomendacionActivity extends AppCompatActivity implements
         mFirebaseDatabaseReference.child("Comments").addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
-                if(dataSnapshot != null && dataSnapshot != null) {
-                    try {
-                        for(DataSnapshot comentarioSnap : dataSnapshot.getChildren()) {
-                            Comments infoComentario = comentarioSnap.getValue(Comments.class);
-                            if(infoComentario.getTipoUsuario().equals(userInfo.getTipo())) {
-                                if(!infoComentario.getUserId().equals(user.getUid())) {
-                                   obtenerDetallesLugar(infoComentario.getPlaceId());
-                                }    
-                            }
+                Comments infoComentario = new Comments();
+                if(dataSnapshot != null) {
+                    for(DataSnapshot comentarioSnap : dataSnapshot.getChildren()) {
+                        try {
+                            infoComentario = comentarioSnap.getValue(Comments.class);
+                        } catch(Exception e) {
+                            Log.e("Comentario null", e.getMessage());
+                            Toast.makeText(RecomendacionActivity.this, "Comments null", Toast.LENGTH_LONG).show();
                         }
-                                   
-                        mostrarRecomendaciones();
-                    } catch(Exception e) {
-                        Toast.makeText(RecomendacionActivity.this, "Error al obtener recomendaciones de la base de datos", Toast.LENGTH_LONG).show();
+                        try {
+                            if (infoComentario.getTipoUsuario().equals(userInfo.getTipo())) {
+                                if (!infoComentario.getUserId().equals(user.getUid())) {
+                                    Log.e("DETALLES", "Entrando en detalles de " + infoComentario.getUserId());
+                                    obtenerDetallesLugar(infoComentario.getPlaceId());
+                                }
+                            }
+                        } catch(Exception e) {
+                            Log.e("InfoComentario", e.getMessage());
+                            infoComentario.toString();
+                        }
                     }
+
+                    mostrarRecomendaciones();
                 }
             }
 
@@ -407,15 +445,22 @@ public class RecomendacionActivity extends AppCompatActivity implements
                                
    public void mostrarRecomendaciones() {
        LinkedList finalRecomendaciones = new LinkedList();
-       
-       for(int i = 0; i < this.listaCercanos.size(); i++) {
-           InfoPlace actualPlace = (InfoPlace) this.listaCercanos.get(i);
-           for(int j = 0; j < this.listaDB.size(); j++) {
-               InfoPlace auxPlace = (InfoPlace) this.listaDB.get(j);
-               if(actualPlace.getPlaceId().equals(auxPlace.getPlaceId())) {
-                   finalRecomendaciones.addLast(actualPlace);
-                   Log.e("Recomendaciones_Finales", actualPlace.toString());
-                   break;
+
+       if(this.listaDB.isEmpty()) {
+           for (int i = 0; i < this.listaCercanos.size(); i++) {
+               InfoPlace actualPlace = (InfoPlace) this.listaCercanos.get(i);
+               Log.e("Recomendaciones_Finales", actualPlace.getPlaceId());
+           }
+       } else {
+           for (int i = 0; i < this.listaCercanos.size(); i++) {
+               InfoPlace actualPlace = (InfoPlace) this.listaCercanos.get(i);
+               for (int j = 0; j < this.listaDB.size(); j++) {
+                   InfoPlace auxPlace = (InfoPlace) this.listaDB.get(j);
+                   if (actualPlace.getPlaceId().equals(auxPlace.getPlaceId())) {
+                       finalRecomendaciones.addLast(actualPlace);
+                       Log.e("Recomendaciones_Finales", actualPlace.toString());
+                       break;
+                   }
                }
            }
        }

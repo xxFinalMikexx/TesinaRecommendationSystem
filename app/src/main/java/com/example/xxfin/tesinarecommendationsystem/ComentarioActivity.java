@@ -41,6 +41,21 @@ import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.api.client.extensions.android.http.AndroidHttp;
+import com.google.api.client.googleapis.json.GoogleJsonResponseException;
+import com.google.api.client.http.HttpTransport;
+import com.google.api.client.json.JsonFactory;
+import com.google.api.client.json.gson.GsonFactory;
+import com.google.api.services.vision.v1.Vision;
+import com.google.api.services.vision.v1.VisionRequest;
+import com.google.api.services.vision.v1.VisionRequestInitializer;
+import com.google.api.services.vision.v1.model.AnnotateImageRequest;
+import com.google.api.services.vision.v1.model.BatchAnnotateImagesRequest;
+import com.google.api.services.vision.v1.model.BatchAnnotateImagesResponse;
+import com.google.api.services.vision.v1.model.EntityAnnotation;
+import com.google.api.services.vision.v1.model.FaceAnnotation;
+import com.google.api.services.vision.v1.model.Feature;
+import com.google.api.services.vision.v1.model.Image;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.auth.*;
@@ -62,7 +77,11 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
+import java.util.Locale;
+import java.util.Random;
 
 import static android.graphics.BitmapFactory.decodeFile;
 
@@ -79,8 +98,9 @@ public class ComentarioActivity extends AppCompatActivity implements
     private Uri uriImagen;
     private String email = "";
     private String userId = "";
+    private int userType = 0;
     private String lastimgdatetime;
-    private Bitmap photo;
+    private String califEmociones;
     private String gustarList[] = {"Si", "No"};
     private String primeraList[] = {"Si", "No"};
 
@@ -107,6 +127,9 @@ public class ComentarioActivity extends AppCompatActivity implements
     private static final int REQUEST_IMAGE_CAPTURE = 1;
     private static final int REQUEST_MAP_RESULT = 2;
     private static final String API_KEY = "AIzaSyALTyezzge7Tz1HdQMfBrUyfkJMWdk_RCE";
+    private static final String CLOUD_VISION_API_KEY = "AIzaSyD0eWl3w-56ZQyhsan_7-surNNmb49Pxi8";
+    private static final String ANDROID_CERT_HEADER = "X-Android-Cert";
+    private static final String ANDROID_PACKAGE_HEADER = "X-Android-Package";
     private static final int RADIOUS_SEARCH = 5000;
     private static final int REQUEST_WRITE_EXTERNAL_STORAGE = 1001;
 
@@ -142,6 +165,7 @@ public class ComentarioActivity extends AppCompatActivity implements
         Bundle extras = getIntent().getExtras();
         this.email = (String) extras.get("email");
         this.userId = (String) extras.get("userId");
+        this.userType = (int) extras.get("userType");
         
         /*Crea cliente de para la localización*/
         crearClienteLocalizacion();
@@ -264,6 +288,7 @@ public class ComentarioActivity extends AppCompatActivity implements
 
     public void getDownloadUrl(UploadTask.TaskSnapshot taskSnapshot) {
         this.downloadUrl = taskSnapshot.getMetadata().getDownloadUrl();
+        cargarEmociones();
         cargarComentario();
     }
 
@@ -271,18 +296,129 @@ public class ComentarioActivity extends AppCompatActivity implements
         Comments comment = new Comments();
         String key = this.mFirebaseDatabaseReference.child("Comments").push().getKey();
         comment.setCommentId(key);
+        comment.setUserId(this.userId);
+        comment.setPlaceId(obtenPlaceId());
+        comment.setPhotoRef(this.rutaImagen);
         comment.setLikeVisit(this.spinGustar.getSelectedItem().toString());
         comment.setFirstTime(this.spinPrimera.getSelectedItem().toString());
         comment.setComments(this.editComentario.getText().toString());
-        comment.setPlaceId(obtenPlaceId());
-        comment.setPhotoRef(this.rutaImagen);
-        comment.setUserId(this.userId);
-
+        comment.setTipoUsuario(this.userType+"");
+        try {
+            Random ran = new Random();
+            int numero = 1 + ((int)Math.random() * ((5 - 1) + 1));
+            comment.setCalifEmociones(numero + "");
+        } catch(Exception e) {
+            comment.setCalifEmociones("1");
+        }
         this.mFirebaseDatabaseReference.child("Comments").child(key).setValue(comment);
 
         Intent mainIntent = new Intent(ComentarioActivity.this, ConfirmActivity.class);
         mainIntent.putExtra("success", 1);
         this.finish();
+    }
+
+    public void cargarEmociones() {
+        final Bitmap bitmap = this.imageBitmap;
+        // Do the real work in an async task, because we need to use the network anyway
+        new AsyncTask<Object, Void, String>() {
+            @Override
+            protected String doInBackground(Object... params) {
+                try {
+                    HttpTransport httpTransport = AndroidHttp.newCompatibleTransport();
+                    JsonFactory jsonFactory = GsonFactory.getDefaultInstance();
+
+                    VisionRequestInitializer requestInitializer =
+                            new VisionRequestInitializer(CLOUD_VISION_API_KEY) {
+                                /**
+                                 * We override this so we can inject important identifying fields into the HTTP
+                                 * headers. This enables use of a restricted cloud platform API key.
+                                 */
+                                @Override
+                                protected void initializeVisionRequest(VisionRequest<?> visionRequest)
+                                        throws IOException {
+                                    super.initializeVisionRequest(visionRequest);
+
+                                    String packageName = getPackageName();
+                                    visionRequest.getRequestHeaders().set(ANDROID_PACKAGE_HEADER, packageName);
+
+                                    String sig = PackageManagerUtils.getSignature(getPackageManager(), packageName);
+
+                                    visionRequest.getRequestHeaders().set(ANDROID_CERT_HEADER, sig);
+                                }
+                            };
+
+                    Vision.Builder builder = new Vision.Builder(httpTransport, jsonFactory, null);
+                    builder.setVisionRequestInitializer(requestInitializer);
+
+                    Vision vision = builder.build();
+
+                    BatchAnnotateImagesRequest batchAnnotateImagesRequest =
+                            new BatchAnnotateImagesRequest();
+                    batchAnnotateImagesRequest.setRequests(new ArrayList<AnnotateImageRequest>() {{
+                        AnnotateImageRequest annotateImageRequest = new AnnotateImageRequest();
+
+                        // Add the image
+                        Image base64EncodedImage = new Image();
+                        // Convert the bitmap to a JPEG
+                        // Just in case it's a format that Android understands but Cloud Vision
+                        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+                        bitmap.compress(Bitmap.CompressFormat.JPEG, 90, byteArrayOutputStream);
+                        byte[] imageBytes = byteArrayOutputStream.toByteArray();
+
+                        // Base64 encode the JPEG
+                        base64EncodedImage.encodeContent(imageBytes);
+                        annotateImageRequest.setImage(base64EncodedImage);
+
+                        // add the features we want
+                        annotateImageRequest.setFeatures(new ArrayList<Feature>() {{
+                            Feature labelDetection = new Feature();
+                            labelDetection.setType("FACE_DETECTION");
+                            labelDetection.setMaxResults(10);
+                            add(labelDetection);
+                        }});
+
+                        // Add the list of one thing to the request
+                        add(annotateImageRequest);
+                    }});
+
+                    Vision.Images.Annotate annotateRequest =
+                            vision.images().annotate(batchAnnotateImagesRequest);
+                    // Due to a bug: requests to Vision API containing large images fail when GZipped.
+                    annotateRequest.setDisableGZipContent(true);
+                    Log.d("Vision", "created Cloud Vision request object, sending request");
+
+                    BatchAnnotateImagesResponse response = annotateRequest.execute();
+                    return convertResponseToString(response);
+
+                } catch (GoogleJsonResponseException e) {
+                    Log.d("JsonResponse", "failed to make API request because " + e.getContent());
+                } catch (IOException e) {
+                    Log.d("IO Exception", "failed to make API request because of other IOException " +
+                            e.getMessage());
+                }
+                return "Cloud Vision API request failed. Check logs for details.";
+            }
+
+            protected void onPostExecute(String result) {
+                Log.e("Result Vision", result);
+            }
+        }.execute();
+    }
+
+    private String convertResponseToString(BatchAnnotateImagesResponse response) {
+        String message = "I found these things:\n\n";
+
+        List<FaceAnnotation> labels = response.getResponses().get(0).getFaceAnnotations();
+        if (labels != null) {
+            for (FaceAnnotation face : labels) {
+                message += face.getJoyLikelihood() + " - " + face.getSurpriseLikelihood();
+                message += "\n";
+            }
+        } else {
+            message += "nothing";
+        }
+
+        return message;
     }
 
     public void getPlaceId(JSONObject result) {

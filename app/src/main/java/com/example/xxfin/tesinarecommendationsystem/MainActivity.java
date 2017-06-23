@@ -41,6 +41,8 @@ public class MainActivity extends AppCompatActivity {
         this.genero = (String) extras.get("genero");
         this.edad = (int) extras.get("edad");
 
+        this.mFirebaseDatabaseReference = FirebaseDatabase.getInstance().getReference();
+
     }
 
     public void enviarAporte(View v) {
@@ -63,10 +65,12 @@ public class MainActivity extends AppCompatActivity {
         this.finish();
     }
 
+    public void obtenerUsuariosId() {
+        String genero[] = {"Masculino", "Femenino"};
+        String rangoEdad[] = {};
+    }
+
     public void cargarAsociacionPrueba(View v) {
-        this.mFirebaseDatabaseReference = FirebaseDatabase.getInstance().getReference();
-
-
         /**/
         String _idUser;
         String _idPlace;

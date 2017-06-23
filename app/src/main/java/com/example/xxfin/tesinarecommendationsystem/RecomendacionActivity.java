@@ -13,6 +13,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.CheckBox;
 import android.widget.GridLayout;
@@ -70,6 +71,8 @@ public class RecomendacionActivity extends AppCompatActivity implements
     private GridView gridPopulate;
     private String tipoLugar = "";
     private String rangoBusqueda = "";
+    public String tipoSeleccionado = "";
+    public String rangoSeleccionado = "";
 
     public GoogleApiClient mGoogleApiClient;
     public Location mLastLocation;
@@ -148,8 +151,26 @@ public class RecomendacionActivity extends AppCompatActivity implements
 
         ArrayAdapter<String> generoAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_dropdown_item, this.tipoLista);
         ArrayAdapter<String> edadedAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_dropdown_item, this.rangoLista);
-        tipoSpin.setAdapter(generoAdapter);
-        rangoSpin.setAdapter(edadedAdapter);
+        this.tipoSpin.setAdapter(generoAdapter);
+        this.rangoSpin.setAdapter(edadedAdapter);
+
+        this.tipoSpin.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                tipoSeleccionado = parent.getItemAtPosition(position).toString();
+                Toast.makeText(getApplicationContext(), "Tipo seleccionado: " + tipoSeleccionado, Toast.LENGTH_LONG).show();
+            }
+            public void onNothingSelected(AdapterView<?> parent) {
+            }
+        });
+
+        this.rangoSpin.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                rangoSeleccionado = parent.getItemAtPosition(position).toString();
+                Toast.makeText(getApplicationContext(), "Tipo seleccionado: " + rangoSeleccionado, Toast.LENGTH_LONG).show();
+            }
+            public void onNothingSelected(AdapterView<?> parent) {
+            }
+        });
     }
 
     /**
@@ -279,17 +300,14 @@ public class RecomendacionActivity extends AppCompatActivity implements
 
     public void buscarRecomendacion(View v) {
         //this.gridMain.setVisibility(View.INVISIBLE);
-        try {
-            String tipoLugar = this.tipoSpin.getSelectedItem().toString();
-            String rangoBusqueda = this.rangoSpin.getSelectedItem().toString();
-            boolean generoSelected = this.generoBox.isSelected();
-            boolean edadSelected = this.edadBox.isSelected();
-            String genero = this.userInfo.getGenero();
-            int edad = this.userInfo.getRangoEdad();
-        } catch(Exception e) {
-            Log.e("Recomendación error", e.getMessage());
-        }
-        
+        String tipoLugar = this.tipoSpin.getSelectedItem().toString();
+        String rangoBusqueda = this.rangoSpin.getSelectedItem().toString();
+        boolean generoSelected = this.generoBox.isSelected();
+        boolean edadSelected = this.edadBox.isSelected();
+        String genero = this.userInfo.getGenero();
+        int edad = this.userInfo.getRangoEdad();
+
+        Toast.makeText(getApplicationContext(), "Entrando a tipo y rango...", Toast.LENGTH_LONG).show();
         this.tipoLugar = getTipoLugar(tipoLugar);
         this.rangoBusqueda = getRangoBusqueda(rangoBusqueda);
 
@@ -328,6 +346,7 @@ public class RecomendacionActivity extends AppCompatActivity implements
     
      public void obtenerResultadosSimilares(String tipo, String rango) {
         RequestQueue queue = Volley.newRequestQueue(this);
+         this.listaCercanos = new LinkedList();
         try {
             StringBuilder googlePlacesUrl = new StringBuilder("https://maps.googleapis.com/maps/api/place/nearbysearch/json?");
             //location=51.503186,-0.126446&radius=5000&types=hospital&key=AIzaSyALTyezzge7Tz1HdQMfBrUyfkJMWdk_RCE
@@ -426,9 +445,11 @@ public class RecomendacionActivity extends AppCompatActivity implements
                         }
                         try {
                             if (infoComentario.getTipoUsuario().equals(userInfo.getTipo())) {
-                                if (!infoComentario.getUserId().equals(user.getUid())) {
-                                    Log.e("DETALLES", "Entrando en detalles de " + infoComentario.getUserId());
-                                    obtenerDetallesLugar(infoComentario.getPlaceId());
+                                if(Integer.parseInt(infoComentario.getCalifEmociones()) >= 4){
+                                    if (!infoComentario.getUserId().equals(user.getUid())) {
+                                        Log.e("DETALLES", "Entrando en detalles de " + infoComentario.getUserId());
+                                        obtenerDetallesLugar(infoComentario.getPlaceId());
+                                    }
                                 }
                             }
                         } catch(Exception e) {
@@ -454,11 +475,11 @@ public class RecomendacionActivity extends AppCompatActivity implements
 
        if(this.listaDB.isEmpty()) {
            //this.listaCercanos.size()
-           for (int i = 0; i < 5; i++) {
+           for (int i = 0; i < this.listaCercanos.size(); i++) {
                InfoPlace actualPlace = (InfoPlace) this.listaCercanos.get(i);
                //Log.e("Recomendaciones_Finales", actualPlace.getPlaceId());
                listaRecomendaciones.add(actualPlace.getName() + "");
-               Log.e("Lugares: ", actualPlace.getName() + "");
+               Log.e("Lugares: ", i + " - " + actualPlace.getPlaceId() + " - " + actualPlace.getName() + "");
            }
 
            ArrayAdapter<String> recomendacionesAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, listaRecomendaciones);
@@ -480,9 +501,10 @@ public class RecomendacionActivity extends AppCompatActivity implements
     
     public String getTipoLugar(String tipoLugar) {
         String tipo = "";
+        Log.e("Tipo lugar", tipoLugar);
+        Toast.makeText(getApplicationContext(), "Tipo de lugar: " + tipoLugar, Toast.LENGTH_LONG).show();
         //"Hospital", "Librería", "Bar", "Café", "Museo", "Escuela", "Banco", "Restaurante", "Tienda", "Alojamiento"
         try {
-            Log.e("Tipo lugar", tipoLugar);
             switch (tipoLugar) {
                 case "Hospital":
                     tipo = "hospital";

@@ -5,6 +5,7 @@ import android.animation.AnimatorListenerAdapter;
 import android.annotation.TargetApi;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.provider.SyncStateContract;
 import android.support.annotation.NonNull;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
@@ -155,10 +156,12 @@ public class LoginActivity extends AppCompatActivity {
     public void createAccount(View v) {
             String email = mEmailField.getText().toString();
             String password = mPasswordField.getText().toString();
-            
+            Toast.makeText(getApplicationContext(), "Creando cuenta...", Toast.LENGTH_LONG).show();
             if(!validateForm()) {
+                Log.e("Error Account", email + " - " + password);
                 return;   
             } else {
+                Toast.makeText(getApplicationContext(), "Validate Form ok...", Toast.LENGTH_LONG).show();
                 // [START create_user_with_email]
                 this.mAuth.createUserWithEmailAndPassword(email, password)
                         .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {

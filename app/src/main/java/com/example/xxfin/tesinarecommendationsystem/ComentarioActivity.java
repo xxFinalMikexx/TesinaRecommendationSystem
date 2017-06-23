@@ -103,6 +103,7 @@ public class ComentarioActivity extends AppCompatActivity implements
     private String califEmociones;
     private String gustarList[] = {"Si", "No"};
     private String primeraList[] = {"Si", "No"};
+    private String califLista[] = {"1", "2", "3", "4", "5"};
 
     public GoogleApiClient mGoogleApiClient;
     public Location mLastLocation;
@@ -119,6 +120,7 @@ public class ComentarioActivity extends AppCompatActivity implements
     private ImageView fotoUsuario;
     private Spinner spinGustar;
     private Spinner spinPrimera;
+    private Spinner spinCalif;
     private EditText editComentario;
     private String placeId;
 
@@ -144,12 +146,15 @@ public class ComentarioActivity extends AppCompatActivity implements
         this.imageHeight = 200;
         this.spinGustar = (Spinner) findViewById(R.id.spinGustar);
         this.spinPrimera = (Spinner) findViewById(R.id.spinPrimera);
+        this.spinCalif = (Spinner) findViewById(R.id.spinCalificacion);
         this.editComentario = (EditText) findViewById(R.id.editComentario);
 
         ArrayAdapter<String> gustarAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_dropdown_item, this.gustarList);
         ArrayAdapter<String> primeraAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_dropdown_item, this.primeraList);
+        ArrayAdapter<String> califAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_dropdown_item, this.califLista);
         this.spinGustar.setAdapter(gustarAdapter);
         this.spinPrimera.setAdapter(primeraAdapter);
+        this.spinCalif.setAdapter(califAdapter);
 
         this.storage = FirebaseStorage.getInstance();
         this.mStorageRef = FirebaseStorage.getInstance().getReference();
@@ -303,6 +308,7 @@ public class ComentarioActivity extends AppCompatActivity implements
         comment.setFirstTime(this.spinPrimera.getSelectedItem().toString());
         comment.setComments(this.editComentario.getText().toString());
         comment.setTipoUsuario(this.userType+"");
+        comment.setCalificacion(Double.parseDouble(this.spinCalif.getSelectedItem().toString()));
         try {
             Random ran = new Random();
             int numero = 1 + ((int)Math.random() * ((5 - 1) + 1));

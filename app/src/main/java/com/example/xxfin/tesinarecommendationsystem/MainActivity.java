@@ -2,22 +2,29 @@ package com.example.xxfin.tesinarecommendationsystem;
 
 import android.app.ProgressDialog;
 import android.content.Intent;
+import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.example.xxfin.tesinarecommendationsystem.Objects.AportesTest;
 import com.example.xxfin.tesinarecommendationsystem.Objects.Asociaciones;
+import com.example.xxfin.tesinarecommendationsystem.Objects.Comments;
 import com.example.xxfin.tesinarecommendationsystem.Objects.Place;
 import com.example.xxfin.tesinarecommendationsystem.Objects.Registro;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.auth.*;
+import com.google.firebase.database.ValueEventListener;
 
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
+import java.util.LinkedList;
 import java.util.TreeMap;
 
 public class MainActivity extends AppCompatActivity {
@@ -31,6 +38,11 @@ public class MainActivity extends AppCompatActivity {
 
     private DatabaseReference mFirebaseDatabaseReference;
 
+    private LinkedList comentarios;
+    private LinkedList cafeId;
+    private LinkedList restaurantId;
+    private LinkedList hotelId;
+    private ProgressDialog prDialog;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -42,9 +54,16 @@ public class MainActivity extends AppCompatActivity {
         this.userType = (int) extras.get("userType");
         this.genero = (String) extras.get("genero");
         this.edad = (int) extras.get("edad");
+        this.comentarios = new LinkedList();
 
         this.mFirebaseDatabaseReference = FirebaseDatabase.getInstance().getReference();
 
+        prDialog = new ProgressDialog(this); // Crear un dialogo para mostrar progreso
+        prDialog.setCancelable(false);
+
+        cafesIds();
+        restaurantIds();
+        hotelesIds();
     }
 
     public void enviarAporte(View v) {
@@ -92,7 +111,44 @@ public class MainActivity extends AppCompatActivity {
         }*/
     }
 
-    public void cargarAsociacionPrueba(View v) {
+    public void cargarAsociaciones(View v) {
+        try {
+            mFirebaseDatabaseReference.child("Comments").addValueEventListener(new ValueEventListener() {
+                @Override
+                public void onDataChange(DataSnapshot dataSnapshot) {
+                    Comments infoComentario = new Comments();
+                    if (dataSnapshot != null) {
+                        for (DataSnapshot comentarioSnap : dataSnapshot.getChildren()) {
+                            infoComentario = comentarioSnap.getValue(Comments.class);
+                            comentarios.addLast(infoComentario);
+                        }
+                    }
+                }
+
+                @Override
+                public void onCancelled(DatabaseError databaseError) {
+                    Toast.makeText(MainActivity.this, "Búsqueda de asociaciones cancelada", Toast.LENGTH_LONG).show();
+                }
+            });
+
+            prDialog.setMessage("Obteniendo lista de recomendaciones..."); // Asignar mensaje al dialogo de progreso
+            prDialog.show(); // Mostrar dialogo de progreso
+            new Handler().postDelayed(new Runnable(){
+                @Override
+                public void run() {
+                /* Create an Intent that will start the Menu-Activity. */
+                    cargarAsociacionPrueba();
+                    prDialog.hide();
+                }
+            }, 10000);
+        } catch(Exception e) {
+            Log.e("Asociaciones Error", "-"+e.getMessage());
+        }
+
+        Log.e("Tamaño List", "-"+comentarios.size());
+    }
+
+    public void cargarAsociacionPrueba() {
         /**/
         String _idUser;
         String _idPlace;
@@ -112,7 +168,8 @@ public class MainActivity extends AppCompatActivity {
 //      Ejemplo 1
 //        Registro[] inputData = new Registro[8];
 //      Ejemplo 2
-        Registro[] inputData = new Registro[22];
+        //Registro[] inputData = new Registro[22];
+        Registro[] inputData = new Registro[this.comentarios.size()];
 
 
 //        inputData[0] = new Registro("iduser0000001", "idPlace0000001", "placeName", "Category");
@@ -129,7 +186,21 @@ public class MainActivity extends AppCompatActivity {
 */
 //      Ejemplo 2
 
-        inputData[0] = new Registro("P1", "A", "lA", "food");
+
+        for(int i = 0; i < inputData.length; i++) {
+            String persona = ""; String origen = "";
+            String nombre = ""; String tipo = "";
+
+            Comments comentarioActual = (Comments) this.comentarios.get(i);
+            persona = comentarioActual.getUserId();
+            origen = comentarioActual.getPlaceId();
+            nombre = comentarioActual.getPlaceId();
+
+            for(int i = 0; i <  )
+            inputData[i] = new Registro(persona, origen, nombre, tipo);
+        }
+
+        /*inputData[0] = new Registro("P1", "A", "lA", "food");
         inputData[1] = new Registro("P10", "B", "lB", "food");
         inputData[2] = new Registro("P10", "A", "lA", "food");
         inputData[3] = new Registro("P2", "B", "lB", "food");
@@ -150,7 +221,7 @@ public class MainActivity extends AppCompatActivity {
         inputData[18] = new Registro("P9", "E", "lE", "food");
         inputData[19] = new Registro("P9", "A", "lA", "food");
         inputData[20] = new Registro("P1", "B", "lB", "food");
-        inputData[21] = new Registro("P1", "E", "lE", "food");
+        inputData[21] = new Registro("P1", "E", "lE", "food");*/
 
 
         Place lugarN = new Place("?", "??", "-1");
@@ -355,5 +426,41 @@ public class MainActivity extends AppCompatActivity {
         }
 
         /***********/
+    }
+
+    public void cafesIds() {
+        this.cafeId.add("ChIJ6772Reda04URKDkrsUue9YA"); this.cafeId.add("ChIJ-cU1Q_FE04URWV1D6HbaKOk");
+        this.cafeId.add("ChIJydKwKCpb04URcSPLPIJad4M"); this.cafeId.add("ChIJYU-PMypb04UR7yZ0Kdkx588");
+        this.cafeId.add("ChIJK-BhczFb04URYqG9JeTTBks"); this.cafeId.add("ChIJ23XB0zxb04URKEMEapQT12U");
+        this.cafeId.add("ChIJzSt8yjVb04URfWDx0JRkC70"); this.cafeId.add("ChIJ43-jwRhb04URN5rOxPgJrL8");
+        this.cafeId.add("ChIJ96SyDyxb04URL9--LFUM1YY"); this.cafeId.add("ChIJz-bwLTpb04URxYNxEx6wzN0");
+        this.cafeId.add("ChIJ-8prZ81a04URrh-0pSmc4d8"); this.cafeId.add("ChIJTQpfY_da04URAHMnI_MtHD0");
+        this.cafeId.add("ChIJIw5AQzZb04URkE-B4cheWr0"); this.cafeId.add("ChIJ____ky9F04URwSPXyRLfPgE");
+        this.cafeId.add("ChIJIfdvQjRb04URnNMpVCoOyac"); this.cafeId.add("ChIJmXPjv-Va04URJN2T7SZFX84");
+        this.cafeId.add("ChIJq3X1kdVa04URaZDSSRovB-4"); this.cafeId.add("ChIJDybk5S9F04URuUtL2ftszpI");
+    }
+
+    public void restaurantIds() {
+        this.restaurantId.add("ChIJI8sKiipb04URiTKY1h347Kk");   this.restaurantId.add("ChIJAQeR59VE04URIdDTJTt_uVI");
+        this.restaurantId.add("ChIJE6Bjxp5a04URLzXL5WHipiY");   this.restaurantId.add("ChIJgQJcdhhb04UR_gvl26c-iHw");
+        this.restaurantId.add("ChIJydKwKCpb04URcSPLPIJad4M");   this.restaurantId.add("ChIJ0SHrESxF04URwItDQLVi900");
+        this.restaurantId.add("ChIJG7laIpha04UR0lN4WWAFl4g");   this.restaurantId.add("ChIJ-yocUSpb04URbi_GN95koN4");
+        this.restaurantId.add("ChIJAe2pQTtb04URQDvPRqHN6fU");   this.restaurantId.add("ChIJK-BhczFb04URYqG9JeTTBks");
+        this.restaurantId.add("ChIJCzisuB5b04URvDmfy2FBl2E");   this.restaurantId.add("ChIJHz-5e5VQ04URc_hATpYwbEU");
+        this.restaurantId.add("ChIJ9btWFTZb04URlAumHG-1aIs");   this.restaurantId.add("ChIJcWuYyhhb04URkiqngDTX_YQ");
+        this.restaurantId.add("ChIJ23XB0zxb04URKEMEapQT12U");   this.restaurantId.add("ChIJ05DPyBhb04URd1mFgIsGWjc");
+        this.restaurantId.add("ChIJ4YnFTx5b04URQ-kR4wBx_1I");   this.restaurantId.add("ChIJEQqPZOVa04URVc8jIaoruKQ");
+    }
+
+    public void hotelesIds() {
+        this.hotelId.add("ChIJI8sKiipb04URiTKY1h347Kk");    this.hotelId.add("ChIJIf9MzTNF04URXPqD-K2u95w");
+        this.hotelId.add("ChIJBxoxLypb04URuvi7myYSgHQ");    this.hotelId.add("ChIJgXB9DtpE04UR7dX_EA7s9P0");
+        this.hotelId.add("ChIJm_S0gCNF04URaGE8B-pMD7A");    this.hotelId.add("ChIJCQ0cmtRE04URgK8OS3ZKNxk");
+        this.hotelId.add("ChIJ71n6PMta04URB6Q5KyH1w50");    this.hotelId.add("ChIJqyDcKxBb04URYorVuMO6DOA");
+        this.hotelId.add("ChIJwW5SVWxb04URC_JigWrz8lQ");    this.hotelId.add("ChIJ4UVGNDJF04URMMYgtG_ALNU");
+        this.hotelId.add("ChIJHagK_ABb04URKsEvap6UK5A");    this.hotelId.add("ChIJL1Ll3Stb04URjoNHCFXjcrY");
+        this.hotelId.add("ChIJsytbntNE04URbfu_cpGVCt4");    this.hotelId.add("ChIJUW5vMixb04UR8iq_LHParC8");
+        this.hotelId.add("ChIJHz-5e5VQ04UR73nUfTTLuNE");    this.hotelId.add("ChIJV2DhBYKVYoYRIG3QB8JficA");
+        this.hotelId.add("ChIJUYsDji5b04URGr-u-MtMmO0");    this.hotelId.add("ChIJ66obS4djzYURpLprHvCimxw");
     }
 }

@@ -15,12 +15,13 @@ package com.example.xxfin.tesinarecommendationsystem.Objects;
     private String tipoUsuario;
     private String califEmociones;
     private double calificacion;
+    private String tipoLugar;
     
     public Comments() {
     
     }
   
-    public Comments(String commentId, String userId, String placeId, String photoRef, String likeVisit, String firstTime, String comments, String tipoUsuario, String califEmociones, double calificacion) {
+    public Comments(String commentId, String userId, String placeId, String photoRef, String likeVisit, String firstTime, String comments, String tipoUsuario, String califEmociones, double calificacion, String tipoLugar) {
         this.commentId = commentId;
         this.userId = userId;
         this.placeId = placeId;
@@ -31,6 +32,8 @@ package com.example.xxfin.tesinarecommendationsystem.Objects;
         this.tipoUsuario = tipoUsuario;
         this.califEmociones = califEmociones;
         this.calificacion = calificacion;
+        this.tipoLugar = tipoLugar;
+
     }
     
     public void setCalifEmociones(String califEmociones) {
@@ -63,6 +66,9 @@ package com.example.xxfin.tesinarecommendationsystem.Objects;
     public void setComments(String comments) {
         this.comments = comments;
     }
+    public void setTipoLugar(String tipoLugar) {
+        this.tipoLugar = tipoLugar;
+    }
     
     public String getCalifEmociones() {
         return this.califEmociones;
@@ -93,5 +99,8 @@ package com.example.xxfin.tesinarecommendationsystem.Objects;
     }
     public String getComments() {
         return this.comments;
+    }
+    public String getTipoLugar() {
+        return this.tipoLugar;
     }
  }

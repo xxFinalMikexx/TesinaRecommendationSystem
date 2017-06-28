@@ -1,5 +1,8 @@
 package com.example.xxfin.tesinarecommendationsystem.Objects;
 
+import android.util.Log;
+import android.view.View;
+
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 
@@ -37,19 +40,100 @@ public class AportesTest {
         usuariosIds();
         usuariosEmails();
         usuariosGenero();
-        insertarUsers();
+        cafesIds();
+        restaurantIds();
+        hotelesIds();
     }
 
     public void insertarUsers() {
         Random ran = new Random();
         for(int i = 0; i < 50; i++) {
-            int edad = ran.nextInt(4 - 1) + 1;
+            int edad = ran.nextInt(4) + 1;
             int type = getUserType(this.usersGenero.get(i)+"", edad);
             Users actual = new Users(this.usersIds.get(i)+"",this.usersEmails.get(i)+"",
                     this.usersGenero.get(i)+"",edad,type,this.usersEmails.get(i)+"");
 
             String key = mFirebaseDatabaseReference.child("Users").push().getKey();
             mFirebaseDatabaseReference.child("Users").child(key).setValue(actual);
+        }
+    }
+
+    public void insertarAportes() {
+        Random ran = new Random();
+        for(int i = 0; i < 100; i++) {
+            String key = this.mFirebaseDatabaseReference.child("Comments").push().getKey();
+            Comments comment = new Comments();
+            int usuario = ran.nextInt(49);
+            comment.setCommentId(key);
+            comment.setUserId(this.usersIds.get(usuario)+"");
+            comment.setPlaceId(this.hotelId.get(ran.nextInt(17))+"");
+            comment.setPhotoRef("");
+            if(ran.nextInt(2) == 0) {
+                comment.setLikeVisit("Si");
+            } else {
+                comment.setLikeVisit("No");
+            }
+            if(ran.nextInt(2) == 0) {
+                comment.setFirstTime("Si");
+            } else {
+                comment.setFirstTime("No");
+            }
+            comment.setComments(this.aportesAlojamiento[ran.nextInt(20)]);
+            comment.setTipoUsuario(getUserType(this.usersGenero.get(usuario)+"",ran.nextInt(3)+1)+"");
+            comment.setCalificacion(ran.nextInt(4)+1);
+            comment.setCalifEmociones((ran.nextInt(4)+1)+"");
+
+            this.mFirebaseDatabaseReference.child("Comments").child(key).setValue(comment);
+        }
+        for(int i = 0; i < 100; i++) {
+            String key = this.mFirebaseDatabaseReference.child("Comments").push().getKey();
+            Comments comment = new Comments();
+            int usuario = ran.nextInt(49);
+            comment.setCommentId(key);
+            comment.setUserId(this.usersIds.get(usuario)+"");
+            comment.setPlaceId(this.restaurantId.get(ran.nextInt(17))+"");
+            comment.setPhotoRef("");
+            if(ran.nextInt(2) == 0) {
+                comment.setLikeVisit("Si");
+            } else {
+                comment.setLikeVisit("No");
+            }
+            if(ran.nextInt(2) == 0) {
+                comment.setFirstTime("Si");
+            } else {
+                comment.setFirstTime("No");
+            }
+            comment.setComments(this.aportesRestaurant[ran.nextInt(20)]);
+            comment.setTipoUsuario(getUserType(this.usersGenero.get(usuario)+"",ran.nextInt(3)+1)+"");
+            comment.setCalificacion(ran.nextInt(4)+1);
+            comment.setCalifEmociones((ran.nextInt(4)+1)+"");
+
+            this.mFirebaseDatabaseReference.child("Comments").child(key).setValue(comment);
+        }
+        for(int i = 0; i < 100; i++) {
+            String key = this.mFirebaseDatabaseReference.child("Comments").push().getKey();
+            Comments comment = new Comments();
+            int usuario = ran.nextInt(49);
+            comment.setCommentId(key);
+            comment.setUserId(this.usersIds.get(usuario)+"");
+            comment.setPlaceId(this.cafeId.get(ran.nextInt(17))+"");
+            comment.setPhotoRef("");
+            if(ran.nextInt(2) == 0) {
+                comment.setLikeVisit("Si");
+            } else {
+                comment.setLikeVisit("No");
+            }
+            if(ran.nextInt(2) == 0) {
+                comment.setFirstTime("Si");
+            } else {
+                comment.setFirstTime("No");
+            }
+            comment.setComments(this.aportesTienda[ran.nextInt(20)]);
+            comment.setTipoUsuario(getUserType(this.usersGenero.get(usuario)+"",ran.nextInt(3)+1)+"");
+            comment.setCalificacion(ran.nextInt(4)+1);
+            comment.setCalifEmociones((ran.nextInt(4)+1)+"");
+
+            this.mFirebaseDatabaseReference.child("Comments").child(key).setValue(comment);
         }
     }
 
@@ -75,7 +159,7 @@ public class AportesTest {
         this.usersIds.add("KZ967dQPrOhMFws9hSZIPOqZv5l2"); this.usersIds.add("pxBSUEaIbFdgzIKFA6s9juQGkKq2");
         this.usersIds.add("Kv9Te9Hc6Raxt4nCFm0UBb2jfrl2"); this.usersIds.add("w10vvduQyAXKJl1J678ZXbPhXTB3");
         this.usersIds.add("RFsnyV6Wjdgd9mjoIhzyZoIcPO32"); this.usersIds.add("w74IKszcPQRgnLLtUT2fVs7Whs83");
-        this.usersIds.add("Sl4AfRlflXRNXWBXIPkmapU6NSv1"); this.usersIds.add("w8HxhKTb2FPd6domR8p8z3TrCRe2");
+        this.usersIds.add("Sl4AfRlflXRNXWBXIPkmapU6NSv1"); //this.usersIds.add("w8HxhKTb2FPd6domR8p8z3TrCRe2");
         this.usersIds.add("U1DR0VG7vkhLdFIpmkoN6fy0SY82"); this.usersIds.add("wlCEIVHu62OtP48EFhWRIIYtqmH3");
         this.usersIds.add("XQwJ0M3La9cborqDtOkKTYbFfJp2"); this.usersIds.add("ya0QYOLfOQexs1FURfN8qAXbwz73");
         this.usersIds.add("XQy3XXVZIgeAfkNkMByUFXy358o1"); this.usersIds.add("yuYcElWqXWe3zFoKkM1rl1TJVpB3");
@@ -103,7 +187,7 @@ public class AportesTest {
         this.usersEmails.add("xxfinalmikexx@gmail.com"); this.usersEmails.add("carolinagovea@gmail.com");
         this.usersEmails.add("ignacioperez@gmail.com"); this.usersEmails.add("omarangeles@gmail.com");
         this.usersEmails.add("miguelcabrera@gmail.com"); this.usersEmails.add("diegogaspar@gmail.com");
-        this.usersEmails.add("pastorflores@gmail.com"); this.usersEmails.add("akaren.paz@gmail.com");
+        this.usersEmails.add("pastorflores@gmail.com"); //this.usersEmails.add("akaren.paz@gmail.com");
         this.usersEmails.add("juanarenas@gmail.com"); this.usersEmails.add("susanaesquivel@gmail.com");
         this.usersEmails.add("raulosorio@gmail.com"); this.usersEmails.add("pedroperez@gmail.com");
         this.usersEmails.add("agustinlara@gmail.com"); this.usersEmails.add("eduardojuarez@gmail.com");
@@ -131,7 +215,7 @@ public class AportesTest {
         this.usersGenero.add("Masculino");  this.usersGenero.add("Femenino");
         this.usersGenero.add("Masculino");  this.usersGenero.add("Masculino");
         this.usersGenero.add("Masculino");  this.usersGenero.add("Masculino");
-        this.usersGenero.add("Masculino");  this.usersGenero.add("Femenino");
+        this.usersGenero.add("Masculino");  //this.usersGenero.add("Femenino");
         this.usersGenero.add("Masculino");  this.usersGenero.add("Femenino");
         this.usersGenero.add("Masculino");  this.usersGenero.add("Masculino");
         this.usersGenero.add("Masculino");  this.usersGenero.add("Masculino");
@@ -237,15 +321,15 @@ public class AportesTest {
         listaComentarios.add("Esta horrible, no hay estacionamiento, v esta como abandonada.");
 
         for(int i = 0; i < this.aportesRestaurant.length; i++) {
-            int random = ran.nextInt(high - low) + low;
+            int random = ran.nextInt(high);
             this.aportesRestaurant[i] = listaComentarios.get(random) + "";
         }
         for(int i = 0; i < this.aportesTienda.length; i++) {
-            int random = ran.nextInt(high - low) + low;
+            int random = ran.nextInt(high);
             this.aportesTienda[i] = listaComentarios.get(random) + "";
         }
         for(int i = 0; i < this.aportesAlojamiento.length; i++) {
-            int random = ran.nextInt(high - low) + low;
+            int random = ran.nextInt(high);
             this.aportesAlojamiento[i] = listaComentarios.get(random) + "";
         }
 

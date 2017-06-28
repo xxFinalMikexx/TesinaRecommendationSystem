@@ -14,17 +14,21 @@ public class InfoPlace {
     private LatLng latlng;
     private JSONArray placeTypes;
     private double rating;
+    private String photo;
+    private String direccion;
 
     public InfoPlace() {
 
     }
 
-    public InfoPlace(CharSequence name, String placeId, LatLng latlng, JSONArray placeTypes, double rating) {
+    public InfoPlace(CharSequence name, String placeId, LatLng latlng, JSONArray placeTypes, double rating, String photo, String direccion) {
         this.name = name;
         this.placeId = placeId;
         this.latlng = latlng;
         this.placeTypes = placeTypes;
         this.rating = rating;
+        this.photo = photo;
+        this.direccion = direccion;
     }
 
     public double getRating() {
@@ -68,6 +72,22 @@ public class InfoPlace {
 
     public void setName(CharSequence name) {
         this.name = name;
+    }
+
+    public String getPhoto() {
+        return this.photo;
+    }
+
+    public void setPhoto(String photo) {
+        this.photo = photo;
+    }
+
+    public String getDireccion() {
+        return this.direccion;
+    }
+
+    public void setDireccion(String direccion) {
+        this.direccion = direccion;
     }
     
     public String toString() {

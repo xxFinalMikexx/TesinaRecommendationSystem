@@ -4,9 +4,11 @@ import android.app.ProgressDialog;
 import android.content.Intent;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
 
+import com.example.xxfin.tesinarecommendationsystem.Objects.AportesTest;
 import com.example.xxfin.tesinarecommendationsystem.Objects.Asociaciones;
 import com.example.xxfin.tesinarecommendationsystem.Objects.Place;
 import com.example.xxfin.tesinarecommendationsystem.Objects.Registro;
@@ -68,6 +70,26 @@ public class MainActivity extends AppCompatActivity {
     public void obtenerUsuariosId() {
         String genero[] = {"Masculino", "Femenino"};
         String rangoEdad[] = {};
+    }
+
+    public void cargarUsuariosPrueba(View v) {
+        try {
+            AportesTest aportes = new AportesTest();
+            aportes.insertarUsers();
+            Log.e("Main", "Usuarios cargados exitosamente");
+        } catch(Exception e) {
+            Log.e("Main", "Error al cargar usuarios..." + e.getMessage());
+        }
+    }
+
+    public void cargarAportesPrueba(View v) {
+        //try {
+            AportesTest aportes = new AportesTest();
+            aportes.insertarAportes();
+            Log.e("Main", "Aportes cargados exitosamente");
+        /*} catch(Exception e) {
+            Log.e("Main", "Error al cargar aportes...");
+        }*/
     }
 
     public void cargarAsociacionPrueba(View v) {

@@ -11,6 +11,8 @@ import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
+import android.location.Address;
+import android.location.Geocoder;
 import android.location.Location;
 import android.location.LocationManager;
 import android.media.ExifInterface;
@@ -27,6 +29,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.ImageView;
@@ -39,6 +42,15 @@ import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
+import com.google.android.gms.location.places.Places;
+import com.google.android.gms.maps.CameraUpdateFactory;
+import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
+import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
+import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.api.client.extensions.android.http.AndroidHttp;
@@ -79,13 +91,15 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Random;
 
 import static android.graphics.BitmapFactory.decodeFile;
 
-public class ComentarioActivity extends AppCompatActivity implements
+public class ComentarioActivity extends AppCompatActivity implements OnMapReadyCallback,
         GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
 
     /*Local Variables*/
@@ -104,9 +118,16 @@ public class ComentarioActivity extends AppCompatActivity implements
     private String gustarList[] = {"Si", "No"};
     private String primeraList[] = {"Si", "No"};
     private String califLista[] = {"1", "2", "3", "4", "5"};
+    private String lugaresLista[];
+    private HashMap cercanosLista = new HashMap();
 
     public GoogleApiClient mGoogleApiClient;
     public Location mLastLocation;
+    private GoogleMap mMap;
+    private Marker user_marker;
+    protected LatLng selected_location;
+    private Geocoder geocoder;
+    private List<Address> addresses = null;
 
     private DatabaseReference mDatabase;
     private DatabaseReference mFirebaseDatabaseReference;
@@ -121,6 +142,7 @@ public class ComentarioActivity extends AppCompatActivity implements
     private Spinner spinGustar;
     private Spinner spinPrimera;
     private Spinner spinCalif;
+    private Spinner spinLugar;
     private EditText editComentario;
     private String placeId;
 
@@ -134,6 +156,8 @@ public class ComentarioActivity extends AppCompatActivity implements
     private static final String ANDROID_PACKAGE_HEADER = "X-Android-Package";
     private static final int RADIOUS_SEARCH = 5000;
     private static final int REQUEST_WRITE_EXTERNAL_STORAGE = 1001;
+    private static final int PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION = 1002;
+    private boolean mLocationPermissionGranted = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -147,6 +171,7 @@ public class ComentarioActivity extends AppCompatActivity implements
         this.spinGustar = (Spinner) findViewById(R.id.spinGustar);
         this.spinPrimera = (Spinner) findViewById(R.id.spinPrimera);
         this.spinCalif = (Spinner) findViewById(R.id.spinCalificacion);
+        this.spinLugar = (Spinner) findViewById(R.id.spinLugar);
         this.editComentario = (EditText) findViewById(R.id.editComentario);
 
         ArrayAdapter<String> gustarAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_dropdown_item, this.gustarList);
@@ -173,7 +198,92 @@ public class ComentarioActivity extends AppCompatActivity implements
         this.userType = (int) extras.get("userType");
         
         /*Crea cliente de para la localización*/
-        crearClienteLocalizacion();
+        // Do other setup activities here too, as described elsewhere in this tutorial.
+
+        // Build the Play services client for use by the Fused Location Provider and the Places API.
+        // Use the addApi() method to request the Google Places API and the Fused Location Provider.
+        mGoogleApiClient = new GoogleApiClient.Builder(this)
+                .enableAutoManage(this /* FragmentActivity */,
+                        this /* OnConnectionFailedListener */)
+                .addConnectionCallbacks(this)
+                .addApi(LocationServices.API)
+                .addApi(Places.GEO_DATA_API)
+                .addApi(Places.PLACE_DETECTION_API)
+                .build();
+        mGoogleApiClient.connect();
+    }
+
+    private void getDeviceLocation() {
+        if (ContextCompat.checkSelfPermission(this.getApplicationContext(),
+                android.Manifest.permission.ACCESS_FINE_LOCATION)
+                == PackageManager.PERMISSION_GRANTED) {
+            mLocationPermissionGranted = true;
+        } else {
+            ActivityCompat.requestPermissions(this,
+                    new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION},
+                    PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION);
+        }
+
+        if (mLocationPermissionGranted) {
+            mLastLocation = LocationServices.FusedLocationApi
+                    .getLastLocation(mGoogleApiClient);
+        }
+
+        // Set the map's camera position to the current location of the device.
+        if (mLastLocation != null) {
+            this.latitud = mLastLocation.getLatitude();
+            this.longitud = mLastLocation.getLongitude();
+            LatLng selected_point = new LatLng(this.latitud, this.longitud);
+            user_marker = mMap.addMarker(new MarkerOptions()
+                    .position(selected_point)
+                    .draggable(true)
+                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)));
+                    new MarkerOptions();
+            mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(selected_point, 12.0f));
+
+            if(this.latitud != 0.0 && this.longitud != 0.0) {
+                Log.e("Obteniendo lugares", "Place_ids");
+                obtenerLugaresPlaceId();
+            }
+
+        } else {
+            Log.d("NULL current", "Current location is null. Using defaults.");
+        }
+    }
+
+    @Override
+    public void onMapReady(GoogleMap map) {
+        mMap = map;
+        getDeviceLocation();
+        mMap.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
+            /**
+             * Metodo que se llama al hacer click en algun lugar del mapa
+             *
+             * @param point coordenadas del lugar donde se dio click
+             */
+            @Override
+            public void onMapClick(LatLng point) {
+
+                // Si un marcador ya existe eliminarlo y crear uno nuevo en la nueva posicion
+                if(user_marker != null) {
+                    user_marker.remove();
+                    user_marker = null;
+                }
+                user_marker = mMap.addMarker(new MarkerOptions()
+                        .position(point)
+                        .draggable(true)
+                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)));
+                selected_location = point;
+                Log.e("Location marker: ", user_marker.getPosition()+"");
+                geocoder = new Geocoder(ComentarioActivity.this, Locale.getDefault());
+                try {
+                    addresses = geocoder.getFromLocation(point.latitude, point.longitude, 1);
+
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
     }
 
     public void revisarPermisos() {
@@ -230,14 +340,45 @@ public class ComentarioActivity extends AppCompatActivity implements
         }
     }
 
+    public void obtenerLugaresPlaceId() {
+        try {
+            RequestQueue queue = Volley.newRequestQueue(this);
+
+            StringBuilder googlePlacesUrl = new StringBuilder("https://maps.googleapis.com/maps/api/place/nearbysearch/json?");
+            googlePlacesUrl.append("latitude=").append(this.latitud).append(",").append(this.longitud);
+            googlePlacesUrl.append("&radius=").append(20);
+            googlePlacesUrl.append("&types=establishment");
+            googlePlacesUrl.append("&key=").append(API_KEY);
+
+            JsonObjectRequest placeRequest = new JsonObjectRequest(
+                    Request.Method.GET,
+                    googlePlacesUrl.toString(),
+                    null,
+                    new Response.Listener<JSONObject>() {
+                        @Override
+                        public void onResponse(JSONObject response) {
+                            getPlacesResponses(response);
+                        }
+                    }, new Response.ErrorListener() {
+                @Override
+                public void onErrorResponse(VolleyError error) {
+                    Toast.makeText(ComentarioActivity.this, "No hay establecimientos cercanos", Toast.LENGTH_LONG).show();
+                }
+            }
+            );
+            queue.add(placeRequest);
+        } catch(Exception e) {
+            Log.e("Places id", "No se pudieron obtener los lugares..." + e.getMessage());
+        }
+    }
 
     public String obtenPlaceId() {
         if(this.longitud != 0.0 && this.latitud != 0.0) {
             RequestQueue queue = Volley.newRequestQueue(this);
 
-            StringBuilder googlePlacesUrl = new StringBuilder("http://maps.google.com/maps/api/geocode/json?");
+            StringBuilder googlePlacesUrl = new StringBuilder("https://maps.google.com/maps/api/geocode/json?");
             googlePlacesUrl.append("latlng=").append(latitud).append(",").append(longitud);
-            googlePlacesUrl.append("&radious=").append(RADIOUS_SEARCH);
+            //googlePlacesUrl.append("&radious=").append(RADIOUS_SEARCH);
             googlePlacesUrl.append("&key=").append(API_KEY);
 
             JsonObjectRequest placeRequest = new JsonObjectRequest (
@@ -298,11 +439,15 @@ public class ComentarioActivity extends AppCompatActivity implements
     }
 
     public void cargarComentario() {
+        if(this.placeId.equals("")) {
+            Toast.makeText(getApplicationContext(), "No se pudo encontrar el id del sitio actual", Toast.LENGTH_LONG).show();
+            return;
+        }
         Comments comment = new Comments();
         String key = this.mFirebaseDatabaseReference.child("Comments").push().getKey();
         comment.setCommentId(key);
         comment.setUserId(this.userId);
-        comment.setPlaceId(obtenPlaceId());
+        comment.setPlaceId("//TODO place Id");
         comment.setPhotoRef(this.rutaImagen);
         comment.setLikeVisit(this.spinGustar.getSelectedItem().toString());
         comment.setFirstTime(this.spinPrimera.getSelectedItem().toString());
@@ -318,8 +463,9 @@ public class ComentarioActivity extends AppCompatActivity implements
         }
         this.mFirebaseDatabaseReference.child("Comments").child(key).setValue(comment);
 
-        Intent mainIntent = new Intent(ComentarioActivity.this, ConfirmActivity.class);
-        mainIntent.putExtra("success", 1);
+        Intent confirmIntent = new Intent(ComentarioActivity.this, ConfirmActivity.class);
+        confirmIntent.putExtra("success", 1);
+        this.startActivity(confirmIntent);
         this.finish();
     }
 
@@ -427,6 +573,39 @@ public class ComentarioActivity extends AppCompatActivity implements
         return message;
     }
 
+    public void getPlacesResponses(JSONObject result) {
+        LinkedList cercanos = new LinkedList();
+        try {
+            JSONArray jsonArray = result.getJSONArray("results");
+            for(int i = 0; i < jsonArray.length(); i++) {
+                JSONObject place = jsonArray.getJSONObject(i);
+                String nombre = place.getString("name");
+                String placeId = place.getString("place_id");
+                this.cercanosLista.put(nombre, placeId);
+                cercanos.add(nombre);
+            }
+
+            this.lugaresLista = new String[cercanos.size()];
+            for(int i = 0; i < cercanos.size(); i++) {
+                this.lugaresLista[i] = cercanos.get(i) + "";
+            }
+
+            ArrayAdapter<String> lugaresAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_dropdown_item, this.lugaresLista);
+            this.spinLugar.setAdapter(lugaresAdapter);
+
+            this.spinLugar.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+                public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                    placeId = parent.getItemAtPosition(position).toString();
+                    Log.e("Place Id encontrado!", placeId);
+                }
+                public void onNothingSelected(AdapterView<?> parent) {
+                }
+            });
+        } catch(Exception e) {
+            Toast.makeText(ComentarioActivity.this, e.getMessage(),Toast.LENGTH_LONG).show();
+        }
+    }
+
     public void getPlaceId(JSONObject result) {
         try {
             JSONArray jsonArray = result.getJSONArray("results");
@@ -437,20 +616,6 @@ public class ComentarioActivity extends AppCompatActivity implements
         }
     }
 
-    public synchronized void crearClienteLocalizacion() {
-        try {
-            mGoogleApiClient = new GoogleApiClient.Builder(this)
-                    .addConnectionCallbacks((GoogleApiClient.ConnectionCallbacks) this)
-                    .addOnConnectionFailedListener((GoogleApiClient.OnConnectionFailedListener) this)
-                    .addApi(LocationServices.API)
-                    .build();
-        } catch (NullPointerException npe) {
-            throw new NullPointerException();
-        } catch (IllegalStateException ise) {
-            throw new IllegalStateException();
-        }
-    }
-
     /**
      * Una vez que se conectó con los servicios de ubicación de google, obtiene las coordenadas de la posición actual
      *
@@ -458,6 +623,10 @@ public class ComentarioActivity extends AppCompatActivity implements
      */
     @Override
     public void onConnected(Bundle connectionHint) {
+        SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
+                .findFragmentById(R.id.map);
+        mapFragment.getMapAsync(this);
+
         if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             // TODO: Consider calling
             //    ActivityCompat#requestPermissions
@@ -588,6 +757,13 @@ public class ComentarioActivity extends AppCompatActivity implements
                     // functionality that depends on this permission.
                 }
                 return;
+            }
+            case PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION: {
+                // If request is cancelled, the result arrays are empty.
+                if (grantResults.length > 0
+                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    mLocationPermissionGranted = true;
+                }
             }
 
             // other 'case' lines to check for other

@@ -55,6 +55,9 @@ public class MainActivity extends AppCompatActivity {
         this.genero = (String) extras.get("genero");
         this.edad = (int) extras.get("edad");
         this.comentarios = new LinkedList();
+        this.cafeId = new LinkedList();
+        this.restaurantId = new LinkedList();
+        this.hotelId = new LinkedList();
 
         this.mFirebaseDatabaseReference = FirebaseDatabase.getInstance().getReference();
 
@@ -160,7 +163,7 @@ public class MainActivity extends AppCompatActivity {
         TreeMap<String, Integer> idPersonasTMap = new TreeMap<>();
         System.out.println("Reglas de Asociación");
 
-        Place[][] matData = new Place[10][5];
+        Place[][] matData = new Place[50][54];
 
         int inxCol = 0;
         int inxRow = 0;
@@ -196,7 +199,34 @@ public class MainActivity extends AppCompatActivity {
             origen = comentarioActual.getPlaceId();
             nombre = comentarioActual.getPlaceId();
 
-            for(int i = 0; i <  )
+            boolean flagCafe = false;
+            boolean flagRestaurante = false;
+            boolean flagAlojamiento = false;
+            for(int j = 0; j < this.cafeId.size(); j++) {
+                if(this.cafeId.get(j).equals(origen)) {
+                    flagCafe = true;
+                    tipo = "cafe";
+                    break;
+                }
+            }
+            if(!flagCafe) {
+                for(int j = 0; j < this.restaurantId.size(); j++) {
+                    if(this.restaurantId.get(j).equals(origen)) {
+                        flagRestaurante = true;
+                        tipo = "restaurant";
+                        break;
+                    }
+                }
+            }
+            if(!flagRestaurante) {
+                for(int j = 0; j < this.hotelId.size(); j++) {
+                    if(this.hotelId.get(j).equals(origen)) {
+                        flagAlojamiento = true;
+                        tipo = "lodging";
+                        break;
+                    }
+                }
+            }
             inputData[i] = new Registro(persona, origen, nombre, tipo);
         }
 
@@ -223,11 +253,10 @@ public class MainActivity extends AppCompatActivity {
         inputData[20] = new Registro("P1", "B", "lB", "food");
         inputData[21] = new Registro("P1", "E", "lE", "food");*/
 
-
         Place lugarN = new Place("?", "??", "-1");
 
-        for (int i = 0; i < 10; i++) {
-            for (int j = 0; j < 5; j++) {
+        for (int i = 0; i < 50; i++) {
+            for (int j = 0; j < 54; j++) {
                 matData[i][j] = lugarN;
             }
         }
@@ -385,7 +414,9 @@ public class MainActivity extends AppCompatActivity {
                             nuevaAsociacion.setSoporte(formatoDefinido.format((d1 / numPersonas) * 100));
 
                             this.mFirebaseDatabaseReference.child("Asociaciones").child(key).setValue(nuevaAsociacion);
+                            Log.e("Asociacion agregada", "-"+nuevaAsociacion.getPlaceIdOrigen());
                         }catch(Exception e) {
+                            Log.e("Error asociacion", "-"+e.getMessage());
                             e.printStackTrace();
                         }
                         System.out.println(
@@ -424,7 +455,6 @@ public class MainActivity extends AppCompatActivity {
             }
             System.out.println();
         }
-
         /***********/
     }
 

@@ -77,11 +77,14 @@ public class DetallesActivity extends AppCompatActivity implements OnMapReadyCal
     private LinkedList listaDestinos;
     private LinkedList asociacionesDestinos;
     private ProgressDialog prDialog;
+    private JSONArray reviews;
+    private boolean comentarios = false;
 
     /*Views and Buttons*/
     private TextView nombreLugar;
     private TextView direccionLugar;
     private TextView ratingLugar;
+    private TextView mostrarComentarios;
     private ImageView asocImage1; private TextView asocNombre1; private TextView asocDir1;
     private ImageView asocImage2; private TextView asocNombre2; private TextView asocDir2;
     private ImageView asocImage3; private TextView asocNombre3; private TextView asocDir3;
@@ -92,6 +95,20 @@ public class DetallesActivity extends AppCompatActivity implements OnMapReadyCal
     private GridLayout asocGrid3;
     private GridLayout asocGrid4;
     private GridLayout asocGrid5;
+
+    private GridLayout reviewGrid;
+    private TextView author1; private TextView hace1; private TextView calif1; private TextView comentario1;
+    private TextView author2; private TextView hace2; private TextView calif2; private TextView comentario2;
+    private TextView author3; private TextView hace3; private TextView calif3; private TextView comentario3;
+    private TextView author4; private TextView hace4; private TextView calif4; private TextView comentario4;
+    private TextView author5; private TextView hace5; private TextView calif5; private TextView comentario5;
+
+    public String actualPlace1;
+    public String actualPlace2;
+    public String actualPlace3;
+    public String actualPlace4;
+    public String actualPlace5;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -107,10 +124,14 @@ public class DetallesActivity extends AppCompatActivity implements OnMapReadyCal
 
         Bundle extras = getIntent().getExtras();
         this.placeId = (String) extras.get("placeId");
+        if(this.placeId == null) {
+            Log.e("Place id", "Nulo");
+        }
 
         this.nombreLugar = (TextView) findViewById(R.id.nombreLugar);
         this.direccionLugar = (TextView) findViewById(R.id.direccionLugar);
         this.ratingLugar = (TextView) findViewById(R.id.ratingLugar);
+        this.mostrarComentarios = (TextView) findViewById(R.id.mostrarComentarios);
 
         /*************************/
         this.asocImage1 = (ImageView)findViewById(R.id.imagen1);
@@ -137,6 +158,34 @@ public class DetallesActivity extends AppCompatActivity implements OnMapReadyCal
         this.asocGrid4 = (GridLayout)findViewById(R.id.propuesta4);
         this.asocGrid5 = (GridLayout)findViewById(R.id.propuesta5);
 
+        this.reviewGrid = (GridLayout)findViewById(R.id.reviewsGrid);
+        this.reviewGrid.setVisibility(View.GONE);
+
+        this.author1 = (TextView) findViewById(R.id.author1);
+        this.author2 = (TextView) findViewById(R.id.author2);
+        this.author3 = (TextView) findViewById(R.id.author3);
+        this.author4 = (TextView) findViewById(R.id.author4);
+        this.author5 = (TextView) findViewById(R.id.author5);
+
+        this.hace1 = (TextView) findViewById(R.id.hace1);
+        this.hace2 = (TextView) findViewById(R.id.hace2);
+        this.hace3 = (TextView) findViewById(R.id.hace3);
+        this.hace4 = (TextView) findViewById(R.id.hace4);
+        this.hace5 = (TextView) findViewById(R.id.hace5);
+
+        this.calif1 = (TextView) findViewById(R.id.calif1);
+        this.calif2 = (TextView) findViewById(R.id.calif2);
+        this.calif3 = (TextView) findViewById(R.id.calif3);
+        this.calif4 = (TextView) findViewById(R.id.calif4);
+        this.calif5 = (TextView) findViewById(R.id.calif5);
+
+        this.comentario1 = (TextView) findViewById(R.id.comentario1);
+        this.comentario2 = (TextView) findViewById(R.id.comentario2);
+        this.comentario3 = (TextView) findViewById(R.id.comentario3);
+        this.comentario4 = (TextView) findViewById(R.id.comentario4);
+        this.comentario5 = (TextView) findViewById(R.id.comentario5);
+
+
         /*************************/
 
         mGoogleApiClient = new GoogleApiClient.Builder(this)
@@ -154,9 +203,15 @@ public class DetallesActivity extends AppCompatActivity implements OnMapReadyCal
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
                 for (DataSnapshot asociacionSnap : dataSnapshot.getChildren()) {
-                    Asociaciones actual = asociacionSnap.getValue(Asociaciones.class);
-                    if(placeId.equals(actual.getPlaceIdOrigen())) {
-                        listaDestinos.addLast(actual);
+                    try {
+                        Asociaciones actual = asociacionSnap.getValue(Asociaciones.class);
+                        Log.e("Actual", actual.getPlaceIdOrigen());
+                        if (placeId.equals(actual.getPlaceIdOrigen())) {
+                            listaDestinos.addLast(actual);
+                        }
+                    }catch(Exception e) {
+                        Log.e("Error Asocioaciones", "-"+e.getMessage());
+                        e.printStackTrace();
                     }
                 }
                 revisarConfianza(listaDestinos);
@@ -193,6 +248,16 @@ public class DetallesActivity extends AppCompatActivity implements OnMapReadyCal
     public void onConnectionSuspended(int cause) {
         Log.d("Comentarios Actividad", "Conexión suspendida");
         //mGoogleApiClient.connect();
+    }
+
+    public void mostrarComentarios(View v) {
+        if(comentarios) {
+            this.reviewGrid.setVisibility(View.GONE);
+            this.comentarios = false;
+        } else {
+            this.reviewGrid.setVisibility(View.VISIBLE);
+            this.comentarios = true;
+        }
     }
 
     public void revisarConfianza(LinkedList destinos) {
@@ -342,6 +407,8 @@ public class DetallesActivity extends AppCompatActivity implements OnMapReadyCal
             String ref = photoRef.getString("photo_reference");
             info.setPhoto(ref);
 
+            info.setPlaceId(jsonObj.getString("place_id"));
+
             this.asociacionesDestinos.addLast(info);
         } catch(Exception e) {
             Log.e("Asociaciones Lugar", e.getMessage());
@@ -370,6 +437,44 @@ public class DetallesActivity extends AppCompatActivity implements OnMapReadyCal
                 this.direccionLugar.setText("No se ha especificado una dirección válida");
             }
 
+            try {
+                this.reviews = jsonObj.getJSONArray("reviews");
+                JSONObject actual = null;
+
+                actual = this.reviews.getJSONObject(0);
+                this.author1.setText(actual.getString("author_name"));
+                this.hace1.setText(actual.getString("relative_time_description"));
+                this.calif1.setText("Calificación otorgada: "+actual.getString("rating"));
+                this.comentario1.setText(actual.getString("text"));
+
+                actual = this.reviews.getJSONObject(1);
+                this.author2.setText(actual.getString("author_name"));
+                this.hace2.setText(actual.getString("relative_time_description"));
+                this.calif2.setText("Calificación otorgada: "+actual.getString("rating"));
+                this.comentario2.setText(actual.getString("text"));
+
+                actual = this.reviews.getJSONObject(2);
+                this.author3.setText(actual.getString("author_name"));
+                this.hace3.setText(actual.getString("relative_time_description"));
+                this.calif3.setText("Calificación otorgada: "+actual.getString("rating"));
+                this.comentario3.setText(actual.getString("text"));
+
+                actual = this.reviews.getJSONObject(3);
+                this.author4.setText(actual.getString("author_name"));
+                this.hace4.setText(actual.getString("relative_time_description"));
+                this.calif4.setText("Calificación otorgada: "+actual.getString("rating"));
+                this.comentario4.setText(actual.getString("text"));
+
+                actual = this.reviews.getJSONObject(4);
+                this.author5.setText(actual.getString("author_name"));
+                this.hace5.setText(actual.getString("relative_time_description"));
+                this.calif5.setText("Calificación otorgada: "+actual.getString("rating"));
+                this.comentario5.setText(actual.getString("text"));
+
+            } catch(Exception e) {
+                Log.e("Comentarios", "-"+e.getMessage());
+            }
+
 
         } catch(Exception e) {
             Log.e("InfoLugar", e.getMessage());
@@ -388,7 +493,7 @@ public class DetallesActivity extends AppCompatActivity implements OnMapReadyCal
                 actual = (InfoPlace) finalRecomendaciones.get(0);
                 String photoRef = "https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference="+actual.getPhoto()+"&key="+API_KEY;
                 Picasso.with(getApplicationContext()).load(photoRef).into(this.asocImage1);
-                final String actualPlace1 = actual.getPlaceId();
+                this.actualPlace1 = actual.getPlaceId();
                 this.asocNombre1.setText(actual.getName());
                 this.asocDir1.setText(actual.getDireccion().toString());
                 this.asocGrid1.setOnClickListener(new View.OnClickListener() {
@@ -400,7 +505,7 @@ public class DetallesActivity extends AppCompatActivity implements OnMapReadyCal
                 actual = (InfoPlace) finalRecomendaciones.get(1);
                 photoRef = "https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference="+actual.getPhoto()+"&key="+API_KEY;
                 Picasso.with(getApplicationContext()).load(photoRef).into(this.asocImage2);
-                final String actualPlace2 = actual.getPlaceId();
+                this.actualPlace2 = actual.getPlaceId();
                 this.asocNombre2.setText(actual.getName());
                 this.asocDir2.setText(actual.getDireccion().toString());
                 this.asocGrid2.setOnClickListener(new View.OnClickListener() {
@@ -412,7 +517,7 @@ public class DetallesActivity extends AppCompatActivity implements OnMapReadyCal
                 actual = (InfoPlace) finalRecomendaciones.get(2);
                 photoRef = "https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference="+actual.getPhoto()+"&key="+API_KEY;
                 Picasso.with(getApplicationContext()).load(photoRef).into(this.asocImage3);
-                final String actualPlace3 = actual.getPlaceId();
+                this.actualPlace3 = actual.getPlaceId();
                 this.asocNombre3.setText(actual.getName());
                 this.asocDir3.setText(actual.getDireccion().toString());
                 this.asocGrid3.setOnClickListener(new View.OnClickListener() {
@@ -424,7 +529,7 @@ public class DetallesActivity extends AppCompatActivity implements OnMapReadyCal
                 actual = (InfoPlace) finalRecomendaciones.get(3);
                 photoRef = "https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference="+actual.getPhoto()+"&key="+API_KEY;
                 Picasso.with(getApplicationContext()).load(photoRef).into(this.asocImage4);
-                final String actualPlace4 = actual.getPlaceId();
+                this.actualPlace4 = actual.getPlaceId();
                 this.asocNombre4.setText(actual.getName());
                 this.asocDir4.setText(actual.getDireccion().toString());
                 this.asocGrid4.setOnClickListener(new View.OnClickListener() {
@@ -436,7 +541,7 @@ public class DetallesActivity extends AppCompatActivity implements OnMapReadyCal
                 actual = (InfoPlace) finalRecomendaciones.get(4);
                 photoRef = "https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference="+actual.getPhoto()+"&key="+API_KEY;
                 Picasso.with(getApplicationContext()).load(photoRef).into(this.asocImage5);
-                final String actualPlace5 = actual.getPlaceId();
+                this.actualPlace5 = actual.getPlaceId();
                 this.asocNombre5.setText(actual.getName());
                 this.asocDir5.setText(actual.getDireccion().toString());
                 this.asocGrid5.setOnClickListener(new View.OnClickListener() {
@@ -453,6 +558,7 @@ public class DetallesActivity extends AppCompatActivity implements OnMapReadyCal
     public void iniciarDetalles(String placeId) {
         Intent detallesIntent = new Intent(DetallesActivity.this, DetallesActivity.class);
         detallesIntent.putExtra("placeId", placeId);
+        Log.e("Pasando Place", placeId);
         startActivity(detallesIntent);
     }
 

@@ -142,9 +142,9 @@ public class ComentarioActivity extends AppCompatActivity implements OnMapReadyC
     private Spinner spinGustar;
     private Spinner spinPrimera;
     private Spinner spinCalif;
-    private Spinner spinLugar;
     private EditText editComentario;
     private String placeId;
+    private ProgressDialog prDialog;
 
 
     /*Static code of result*/
@@ -171,7 +171,6 @@ public class ComentarioActivity extends AppCompatActivity implements OnMapReadyC
         this.spinGustar = (Spinner) findViewById(R.id.spinGustar);
         this.spinPrimera = (Spinner) findViewById(R.id.spinPrimera);
         this.spinCalif = (Spinner) findViewById(R.id.spinCalificacion);
-        this.spinLugar = (Spinner) findViewById(R.id.spinLugar);
         this.editComentario = (EditText) findViewById(R.id.editComentario);
 
         ArrayAdapter<String> gustarAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_dropdown_item, this.gustarList);
@@ -211,6 +210,9 @@ public class ComentarioActivity extends AppCompatActivity implements OnMapReadyC
                 .addApi(Places.PLACE_DETECTION_API)
                 .build();
         mGoogleApiClient.connect();
+
+        prDialog = new ProgressDialog(this); // Crear un dialogo para mostrar progreso
+        prDialog.setCancelable(false);
     }
 
     private void getDeviceLocation() {
@@ -243,7 +245,7 @@ public class ComentarioActivity extends AppCompatActivity implements OnMapReadyC
 
             if(this.latitud != 0.0 && this.longitud != 0.0) {
                 Log.e("Obteniendo lugares", "Place_ids");
-                obtenerLugaresPlaceId();
+                obtenPlaceId();
             }
 
         } else {
@@ -319,6 +321,8 @@ public class ComentarioActivity extends AppCompatActivity implements OnMapReadyC
             return;
         }
 
+        prDialog.setMessage("Cargando aporte...");
+        prDialog.show();
         try {
             Bitmap bmp = this.imageBitmap;
             String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
@@ -337,38 +341,6 @@ public class ComentarioActivity extends AppCompatActivity implements OnMapReadyC
         super.onStop();
         if (mGoogleApiClient.isConnected()) {
             mGoogleApiClient.disconnect(); // Detiene la conexión con el servicio de Google
-        }
-    }
-
-    public void obtenerLugaresPlaceId() {
-        try {
-            RequestQueue queue = Volley.newRequestQueue(this);
-
-            StringBuilder googlePlacesUrl = new StringBuilder("https://maps.googleapis.com/maps/api/place/nearbysearch/json?");
-            googlePlacesUrl.append("latitude=").append(this.latitud).append(",").append(this.longitud);
-            googlePlacesUrl.append("&radius=").append(20);
-            googlePlacesUrl.append("&types=establishment");
-            googlePlacesUrl.append("&key=").append(API_KEY);
-
-            JsonObjectRequest placeRequest = new JsonObjectRequest(
-                    Request.Method.GET,
-                    googlePlacesUrl.toString(),
-                    null,
-                    new Response.Listener<JSONObject>() {
-                        @Override
-                        public void onResponse(JSONObject response) {
-                            getPlacesResponses(response);
-                        }
-                    }, new Response.ErrorListener() {
-                @Override
-                public void onErrorResponse(VolleyError error) {
-                    Toast.makeText(ComentarioActivity.this, "No hay establecimientos cercanos", Toast.LENGTH_LONG).show();
-                }
-            }
-            );
-            queue.add(placeRequest);
-        } catch(Exception e) {
-            Log.e("Places id", "No se pudieron obtener los lugares..." + e.getMessage());
         }
     }
 
@@ -462,6 +434,8 @@ public class ComentarioActivity extends AppCompatActivity implements OnMapReadyC
             comment.setCalifEmociones("1");
         }
         this.mFirebaseDatabaseReference.child("Comments").child(key).setValue(comment);
+
+        prDialog.hide();
 
         Intent confirmIntent = new Intent(ComentarioActivity.this, ConfirmActivity.class);
         confirmIntent.putExtra("success", 1);
@@ -571,39 +545,6 @@ public class ComentarioActivity extends AppCompatActivity implements OnMapReadyC
         }
 
         return message;
-    }
-
-    public void getPlacesResponses(JSONObject result) {
-        LinkedList cercanos = new LinkedList();
-        try {
-            JSONArray jsonArray = result.getJSONArray("results");
-            for(int i = 0; i < jsonArray.length(); i++) {
-                JSONObject place = jsonArray.getJSONObject(i);
-                String nombre = place.getString("name");
-                String placeId = place.getString("place_id");
-                this.cercanosLista.put(nombre, placeId);
-                cercanos.add(nombre);
-            }
-
-            this.lugaresLista = new String[cercanos.size()];
-            for(int i = 0; i < cercanos.size(); i++) {
-                this.lugaresLista[i] = cercanos.get(i) + "";
-            }
-
-            ArrayAdapter<String> lugaresAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_dropdown_item, this.lugaresLista);
-            this.spinLugar.setAdapter(lugaresAdapter);
-
-            this.spinLugar.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-                public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                    placeId = parent.getItemAtPosition(position).toString();
-                    Log.e("Place Id encontrado!", placeId);
-                }
-                public void onNothingSelected(AdapterView<?> parent) {
-                }
-            });
-        } catch(Exception e) {
-            Toast.makeText(ComentarioActivity.this, e.getMessage(),Toast.LENGTH_LONG).show();
-        }
     }
 
     public void getPlaceId(JSONObject result) {

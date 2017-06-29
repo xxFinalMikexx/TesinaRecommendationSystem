@@ -1,7 +1,11 @@
 <resources>
     <string name="app_name">Sistema de Recomendación</string>
-    <string name="title_activity_principal">PrincipalActivity</string>
-    <string name="title_activity_login">Sign in</string>
+    <string name="title_activity_principal">Sistema de Recomendación</string>
+    <string name="title_activity_login">Sistema de Recomendación</string>
+    <string name="Informacion">
+        El siguiente sistema ha sido creado con la intención de ofrecer recomendaciones. Realiza aportaciones para
+        incrementar la información dentro del sistema, o bien, busca recomendaciones de sitios cercanos.
+    </string>
 
     <!-- Strings related to login -->
     <string name="prompt_email">Email</string>

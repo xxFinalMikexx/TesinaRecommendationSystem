@@ -111,6 +111,9 @@ public class RecomendacionActivity extends AppCompatActivity implements
     private GridLayout recomend4;   private GridLayout gridGoogle4;
     private GridLayout recomend5;   private GridLayout gridGoogle5;
 
+    private ImageView botonApp;
+    private ImageView botonGoogle;
+
     public GoogleApiClient mGoogleApiClient;
     public Location mLastLocation;
 
@@ -179,6 +182,10 @@ public class RecomendacionActivity extends AppCompatActivity implements
 
             }
         });
+        this.botonApp = (ImageView) findViewById(R.id.recomendacionesDB);
+        this.botonGoogle = (ImageView) findViewById(R.id.recomendacionesGoogle);
+        this.botonApp.setVisibility(View.GONE);
+        this.botonGoogle.setVisibility(View.GONE);
 
         this.tipoSpin = (Spinner) findViewById(R.id.spinFiltro);
         this.rangoSpin = (Spinner) findViewById(R.id.spinRango);
@@ -268,7 +275,7 @@ public class RecomendacionActivity extends AppCompatActivity implements
     }
 
     public void fillUserInformation(String userId, String nombre, String genero, int rangoEdad, int tipo, String email) {
-        Toast.makeText(getApplicationContext(), "Fill user info not null", Toast.LENGTH_LONG).show();
+        //Toast.makeText(getApplicationContext(), "Fill user info not null", Toast.LENGTH_LONG).show();
         this.userInfo = new Users(userId, nombre, genero, rangoEdad, tipo, email);
         Log.e("User info", "User info not null");
     }
@@ -381,6 +388,8 @@ public class RecomendacionActivity extends AppCompatActivity implements
 
     public void buscarRecomendacion(View v) {
         //this.gridMain.setVisibility(View.INVISIBLE);
+        this.botonApp.setVisibility(View.VISIBLE);
+        this.botonGoogle.setVisibility(View.VISIBLE);
         flag = false;
         this.placesHash = new HashMap();
         //Toast.makeText(getApplicationContext(), "Entrando a tipo y rango...", Toast.LENGTH_LONG).show();
@@ -398,7 +407,7 @@ public class RecomendacionActivity extends AppCompatActivity implements
                 mostrarRecomendaciones();
                 prDialog.hide();
             }
-        }, 15000);
+        }, 10000);
     }
     
     public synchronized void obtenerDetallesLugar(String placeId) {
@@ -490,6 +499,8 @@ public class RecomendacionActivity extends AppCompatActivity implements
                 return;
             }
             lugarActual.setRating(jsonObj.getDouble("rating"));
+
+            lugarActual.setReviews(jsonObj.getJSONArray("reviews"));
 
             JSONArray photos = jsonObj.getJSONArray("photos");
             JSONObject photoRef = photos.getJSONObject(0);
@@ -714,7 +725,7 @@ public class RecomendacionActivity extends AppCompatActivity implements
                final String actualPlace1 = actual.getPlaceId();
                this.nombre1.setText(actual.getName());
                this.direccion1.setText(actual.getDireccion().toString());
-               this.rating1.setText(actual.getRating() + "");
+               this.rating1.setText("Calificación: "+actual.getRating() + "");
                this.recomend1.setOnClickListener(new View.OnClickListener() {
                    public void onClick(View v) {
                         iniciarDetalles(actualPlace1);
@@ -727,7 +738,7 @@ public class RecomendacionActivity extends AppCompatActivity implements
                final String actualPlace2 = actual.getPlaceId();
                this.nombre2.setText(actual.getName());
                this.direccion2.setText(actual.getDireccion().toString());
-               this.rating2.setText(actual.getRating() + "");
+               this.rating2.setText("Calificación: "+actual.getRating() + "");
                this.recomend2.setOnClickListener(new View.OnClickListener() {
                    public void onClick(View v) {
                        iniciarDetalles(actualPlace2);
@@ -740,7 +751,7 @@ public class RecomendacionActivity extends AppCompatActivity implements
                final String actualPlace3 = actual.getPlaceId();
                this.nombre3.setText(actual.getName());
                this.direccion3.setText(actual.getDireccion().toString());
-               this.rating3.setText(actual.getRating() + "");
+               this.rating3.setText("Calificación: "+actual.getRating() + "");
                this.recomend3.setOnClickListener(new View.OnClickListener() {
                    public void onClick(View v) {
                        iniciarDetalles(actualPlace3);
@@ -753,7 +764,7 @@ public class RecomendacionActivity extends AppCompatActivity implements
                final String actualPlace4 = actual.getPlaceId();
                this.nombre4.setText(actual.getName());
                this.direccion4.setText(actual.getDireccion().toString());
-               this.rating4.setText(actual.getRating() + "");
+               this.rating4.setText("Calificación: "+actual.getRating() + "");
                this.recomend4.setOnClickListener(new View.OnClickListener() {
                    public void onClick(View v) {
                        iniciarDetalles(actualPlace4);
@@ -766,7 +777,7 @@ public class RecomendacionActivity extends AppCompatActivity implements
                final String actualPlace5 = actual.getPlaceId();
                this.nombre5.setText(actual.getName());
                this.direccion5.setText(actual.getDireccion().toString());
-               this.rating5.setText(actual.getRating() + "");
+               this.rating5.setText("Calificación: "+actual.getRating() + "");
                this.recomend5.setOnClickListener(new View.OnClickListener() {
                    public void onClick(View v) {
                        iniciarDetalles(actualPlace5);
@@ -779,7 +790,7 @@ public class RecomendacionActivity extends AppCompatActivity implements
                final String actualPlace6 = actual.getPlaceId();
                this.nombre6.setText(actual.getName());
                this.direccion6.setText(actual.getDireccion().toString());
-               this.rating6.setText(actual.getRating() + "");
+               this.rating6.setText("Calificación: "+actual.getRating() + "");
                this.gridGoogle1.setOnClickListener(new View.OnClickListener() {
                    public void onClick(View v) {
                        iniciarDetalles(actualPlace6);
@@ -792,7 +803,7 @@ public class RecomendacionActivity extends AppCompatActivity implements
                final String actualPlace7 = actual.getPlaceId();
                this.nombre7.setText(actual.getName());
                this.direccion7.setText(actual.getDireccion().toString());
-               this.rating7.setText(actual.getRating() + "");
+               this.rating7.setText("Calificación: "+actual.getRating() + "");
                this.gridGoogle2.setOnClickListener(new View.OnClickListener() {
                    public void onClick(View v) {
                        iniciarDetalles(actualPlace7);
@@ -805,7 +816,7 @@ public class RecomendacionActivity extends AppCompatActivity implements
                final String actualPlace8 = actual.getPlaceId();
                this.nombre8.setText(actual.getName());
                this.direccion8.setText(actual.getDireccion().toString());
-               this.rating8.setText(actual.getRating() + "");
+               this.rating8.setText("Calificación: "+actual.getRating() + "");
                this.gridGoogle3.setOnClickListener(new View.OnClickListener() {
                    public void onClick(View v) {
                        iniciarDetalles(actualPlace8);
@@ -818,7 +829,7 @@ public class RecomendacionActivity extends AppCompatActivity implements
                final String actualPlace9 = actual.getPlaceId();
                this.nombre9.setText(actual.getName());
                this.direccion9.setText(actual.getDireccion().toString());
-               this.rating9.setText(actual.getRating() + "");
+               this.rating9.setText("Calificación: "+actual.getRating() + "");
                this.gridGoogle4.setOnClickListener(new View.OnClickListener() {
                    public void onClick(View v) {
                        iniciarDetalles(actualPlace9);
@@ -831,7 +842,7 @@ public class RecomendacionActivity extends AppCompatActivity implements
                final String actualPlace10 = actual.getPlaceId();
                this.nombre10.setText(actual.getName());
                this.direccion10.setText(actual.getDireccion().toString());
-               this.rating10.setText(actual.getRating() + "");
+               this.rating10.setText("Calificación: "+actual.getRating() + "");
                this.gridGoogle5.setOnClickListener(new View.OnClickListener() {
                    public void onClick(View v) {
                        iniciarDetalles(actualPlace10);

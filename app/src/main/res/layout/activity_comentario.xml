@@ -22,37 +22,6 @@
 
             <TextView
                 android:layout_height="25dp"
-                android:layout_column="0"
-                android:layout_columnSpan="3"
-                android:layout_row="0"
-                android:layout_marginLeft="10dp"
-                android:layout_marginRight="10dp"
-                android:textSize="15dp"
-                android:text="Parece que te encuentras cerca de estos lugares:" />
-
-            <ImageView
-                android:layout_height="50dp"
-                android:layout_width="50dp"
-                android:layout_column="0"
-                android:layout_row="1"
-                android:layout_marginLeft="10dp"
-                android:layout_marginRight="5dp"
-                android:src="@drawable/marker"
-                />
-
-            <Spinner
-                android:id="@+id/spinLugar"
-                android:layout_height="50dp"
-                android:layout_width="280dp"
-                android:layout_row="1"
-                android:layout_column="1"
-                android:layout_columnSpan="3"
-                android:layout_marginRight="10dp"
-                android:layout_marginLeft="5dp">
-            </Spinner>
-
-            <TextView
-                android:layout_height="25dp"
                 android:layout_width="match_parent"
                 android:layout_row="2"
                 android:layout_column="0"
@@ -61,6 +30,7 @@
                 android:layout_marginLeft="10dp"
                 android:layout_marginTop="10dp"
                 android:textSize="20dp"
+                android:textColor="@color/black"
                 android:text="¿Te gustó tu visita?"/>
 
             <Spinner
@@ -83,6 +53,7 @@
                 android:layout_marginLeft="10dp"
                 android:layout_marginRight="10dp"
                 android:textSize="20dp"
+                android:textColor="@color/black"
                 android:text="¿Es tu primera vez aquí?" />
 
             <Spinner
@@ -105,6 +76,7 @@
                 android:layout_marginLeft="10dp"
                 android:layout_marginRight="10dp"
                 android:textSize="20dp"
+                android:textColor="@color/black"
                 android:text="Calificación" />
 
             <Spinner
@@ -129,6 +101,7 @@
                 android:layout_marginRight="10dp"
                 android:layout_marginBottom="20dp"
                 android:textSize="20dp"
+                android:textColor="@color/black"
                 android:text="Comentarios" />
 
             <EditText
@@ -146,15 +119,16 @@
                 android:textSize="20dp"></EditText>
 
             <TextView
-                android:layout_height="50dp"
+                android:layout_height="25dp"
                 android:layout_width="match_parent"
                 android:layout_column="0"
                 android:layout_columnSpan="4"
                 android:layout_row="10"
-                android:layout_marginLeft="10dp"
-                android:layout_marginRight="20dp"
-                android:textSize="20dp"
-                android:text="Agrega una imagen para el escaneo de emociones..." />
+                android:layout_marginLeft="5dp"
+                android:layout_marginRight="5dp"
+                android:textSize="13dp"
+                android:textColor="@color/black"
+                android:text="Agrega una imagen para el escaneo de emociones" />
             
             <ImageView
                 android:layout_height="250dp"
@@ -167,8 +141,7 @@
                 android:layout_marginRight="5dp"
                 android:layout_marginBottom="20dp"
                 android:layout_marginTop="5dp"
-                android:padding="2dp"
-                android:background="@drawable/imagen_inicio"/>
+                android:padding="2dp" />
 
             <ImageButton
                 android:id="@+id/botonTomarFoto"
@@ -183,10 +156,10 @@
                 android:onClick="tomarFoto">
             </ImageButton>
 
-            <ImageButton
+            <Button
                 android:id="@+id/enviarAporte"
-                android:layout_width="80dp"
-                android:layout_height="80dp"
+                android:layout_width="120dp"
+                android:layout_height="40dp"
                 android:layout_gravity="center"
                 android:layout_row="12"
                 android:layout_column="2"
@@ -195,9 +168,11 @@
                 android:layout_marginLeft="20dp"
                 android:layout_marginRight="10dp"
                 android:layout_marginBottom="10dp"
-                android:background="@drawable/send"
+                android:textColor="@color/white"
+                android:background="@color/colorPrimary"
+                android:text="Enviar"
                 android:onClick="enviarAporte">
-            </ImageButton>
+            </Button>
 
             <fragment xmlns:android="http://schemas.android.com/apk/res/android"
                 xmlns:tools="http://schemas.android.com/tools"

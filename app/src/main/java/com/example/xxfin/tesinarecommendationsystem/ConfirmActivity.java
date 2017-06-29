@@ -14,8 +14,6 @@ public class ConfirmActivity extends AppCompatActivity {
     }
 
     public void okConfirmar(View v) {
-        Intent intentMain = new Intent(ConfirmActivity.this, MainActivity.class);
-        this.startActivity(intentMain);
         this.finish();
     }
 }

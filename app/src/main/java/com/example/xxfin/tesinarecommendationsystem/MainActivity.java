@@ -2,11 +2,13 @@ package com.example.xxfin.tesinarecommendationsystem;
 
 import android.app.ProgressDialog;
 import android.content.Intent;
+import android.graphics.drawable.BitmapDrawable;
 import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -15,6 +17,7 @@ import com.example.xxfin.tesinarecommendationsystem.Objects.Asociaciones;
 import com.example.xxfin.tesinarecommendationsystem.Objects.Comments;
 import com.example.xxfin.tesinarecommendationsystem.Objects.Place;
 import com.example.xxfin.tesinarecommendationsystem.Objects.Registro;
+import com.google.api.services.vision.v1.model.Image;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -37,6 +40,7 @@ public class MainActivity extends AppCompatActivity {
     private int edad = 0;
 
     private DatabaseReference mFirebaseDatabaseReference;
+    private FirebaseAuth mAuth;
 
     private LinkedList comentarios;
     private LinkedList cafeId;
@@ -44,10 +48,21 @@ public class MainActivity extends AppCompatActivity {
     private LinkedList hotelId;
     private ProgressDialog prDialog;
 
+    private ImageView logo;
+    private ImageView icon1;
+    private ImageView icon2;
+    private ImageView icon3;
+    private ImageView icon4;
+    private ImageView icon5;
+    private ImageView icon6;
+    private ImageView aporte;
+    private ImageView recomendacion;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        System.gc();
         Bundle extras = getIntent().getExtras();
         this.email = (String) extras.get("email");
         this.userId = (String) extras.get("userId");
@@ -59,6 +74,27 @@ public class MainActivity extends AppCompatActivity {
         this.restaurantId = new LinkedList();
         this.hotelId = new LinkedList();
 
+        this.logo = (ImageView) findViewById(R.id.imagenLogo);
+        this.icon1 = (ImageView) findViewById(R.id.icon1);
+        this.icon2 = (ImageView) findViewById(R.id.icon2);
+        this.icon3 = (ImageView) findViewById(R.id.icon3);
+        this.icon4 = (ImageView) findViewById(R.id.icon4);
+        this.icon5 = (ImageView) findViewById(R.id.icon5);
+        this.icon6 = (ImageView) findViewById(R.id.icon6);
+        this.aporte = (ImageView) findViewById(R.id.enviarAporte);
+        this.recomendacion = (ImageView) findViewById(R.id.buscarRecomendacion);
+        this.logo.setImageResource(R.drawable.turista);
+        this.icon1.setImageResource(R.drawable.icon1);
+        this.icon2.setImageResource(R.drawable.icon2);
+        this.icon3.setImageResource(R.drawable.icon3);
+        this.icon4.setImageResource(R.drawable.icon4);
+        this.icon5.setImageResource(R.drawable.icon5);
+        this.icon6.setImageResource(R.drawable.icon6);
+        this.aporte.setImageResource(R.drawable.comentario);
+        this.recomendacion.setImageResource(R.drawable.recomendar);
+
+
+        this.mAuth = FirebaseAuth.getInstance();
         this.mFirebaseDatabaseReference = FirebaseDatabase.getInstance().getReference();
 
         prDialog = new ProgressDialog(this); // Crear un dialogo para mostrar progreso
@@ -492,5 +528,12 @@ public class MainActivity extends AppCompatActivity {
         this.hotelId.add("ChIJsytbntNE04URbfu_cpGVCt4");    this.hotelId.add("ChIJUW5vMixb04UR8iq_LHParC8");
         this.hotelId.add("ChIJHz-5e5VQ04UR73nUfTTLuNE");    this.hotelId.add("ChIJV2DhBYKVYoYRIG3QB8JficA");
         this.hotelId.add("ChIJUYsDji5b04URGr-u-MtMmO0");    this.hotelId.add("ChIJ66obS4djzYURpLprHvCimxw");
+    }
+
+    public void signOut(View v) {
+        mAuth.signOut();
+        Intent login = new Intent(MainActivity.this, LoginActivity.class);
+        startActivity(login);
+        this.finish();
     }
 }

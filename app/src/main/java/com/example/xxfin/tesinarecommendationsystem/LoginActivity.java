@@ -99,21 +99,24 @@ public class LoginActivity extends AppCompatActivity {
             mFirebaseDatabaseReference.child("Users").addValueEventListener(new ValueEventListener() {
                 @Override
                 public void onDataChange(DataSnapshot dataSnapshot) {
-                    Log.e("Login...", "Data changed...");
                     try{
                         if(!dataSnapshot.hasChildren()) {
-                            Log.e("No usuario...", "Question activity start...");
+                            Log.e("No children", "-");
                             Intent intent = new Intent(LoginActivity.this, QuestionActivity.class);
                             intent.putExtra("email", user.getEmail());
                             intent.putExtra("userId", user.getUid());
 
                             startActivity(intent);
+                            finish();
                         } else {
+                            Log.e("Children", "-");
+                            boolean flag = true;
                             for (DataSnapshot userSnap : dataSnapshot.getChildren()) {
                                 Users userObj = userSnap.getValue(Users.class);
                                 if(userObj.getUserId().equals(user.getUid())) {
-                                    Log.e("Usuario!!",user.getUid());
-                                    /*User has already answered the questions. Go directly to */
+                                    Log.e("Usuario", user.getUid());
+                                    /*User has already answered the questions. Go directly to*/
+
                                     Intent mainIntent = new Intent(LoginActivity.this, MainActivity.class);
                                     mainIntent.putExtra("email", user.getEmail());
                                     mainIntent.putExtra("userId", user.getUid());
@@ -121,29 +124,30 @@ public class LoginActivity extends AppCompatActivity {
                                     mainIntent.putExtra("genero", userObj.getGenero());
                                     mainIntent.putExtra("edad", userObj.getRangoEdad());
                                     startActivity(mainIntent);
+                                    flag = false;
                                     finish();
                                     break;
-                                } else {
-                                    Log.e("No usuario...", "Question activity start...");
-                                    Intent intent = new Intent(LoginActivity.this, QuestionActivity.class);
-                                    intent.putExtra("email", user.getEmail());
-                                    intent.putExtra("userId", user.getUid());
-
-                                    startActivity(intent);
                                 }
+                            }
+                            if(flag) {
+                                Intent intent = new Intent(LoginActivity.this, QuestionActivity.class);
+                                intent.putExtra("email", user.getEmail());
+                                intent.putExtra("userId", user.getUid());
+
+                                startActivity(intent);
+                                finish();
                             }
                         }
 
                     } catch (Exception ex) {
                         Toast.makeText(getApplicationContext(), ex.getMessage(), Toast.LENGTH_SHORT).show();
                         Log.e("Error en UpdateUI", ex.getMessage());
-
                     }
                 }
 
                 @Override
                 public void onCancelled(DatabaseError databaseError) {
-                    Toast.makeText(getApplicationContext(), "Se ha interrumpido la conexión", Toast.LENGTH_SHORT).show();
+                    //Toast.makeText(getApplicationContext(), "Se ha interrumpido la conexión", Toast.LENGTH_SHORT).show();
                 }
             });
         } else {

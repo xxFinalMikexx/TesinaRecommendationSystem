@@ -94,8 +94,13 @@ public class QuestionActivity extends AppCompatActivity {
         mFirebaseDatabaseReference.child("Users").child(key).setValue(user);
 
         Intent mainIntent = new Intent(QuestionActivity.this, MainActivity.class);
+        mainIntent.putExtra("email", user.getEmail());
+        mainIntent.putExtra("userId", user.getUserId());
+        mainIntent.putExtra("userType", user.getTipo());
+        mainIntent.putExtra("genero", user.getGenero());
+        mainIntent.putExtra("edad", user.getRangoEdad());
         startActivity(mainIntent);
-        finish();
+        this.finish();
     }
     
     public int getUserType(String genero, int edad) {
